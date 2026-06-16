@@ -82,19 +82,31 @@
   // ── FIREBASE: importar dados iniciais ──
   async function importarDadosIniciais() {
     const snap = await getDocs(collection(db, 'processos'));
-    if (!snap.empty) return;
-    mostrarToast('Importando processos...', 'info');
-    for (const p of DADOS_INICIAIS) {
-      const { id, concluido, ...dados } = p;
-      await addDoc(collection(db, 'processos'), {
-        ...dados,
-        concluido: false,
-        comentarios: [],
-        criadoEm: serverTimestamp(),
-        atualizadoEm: serverTimestamp(),
-      });
+    const numerosExistentes = new Set(snap.docs.map(d => d.data().numero));
+    const faltando = DADOS_INICIAIS.filter(p => !numerosExistentes.has(p.numero));
+
+    if (faltando.length === 0) return; // tudo já importado
+
+    mostrarToast(`Importando ${faltando.length} processos pendentes...`, 'info');
+    const LOTE = 15;
+    let total = 0;
+    for (let i = 0; i < faltando.length; i += LOTE) {
+      const lote = faltando.slice(i, i + LOTE);
+      for (const p of lote) {
+        const { id, concluido, ...dados } = p;
+        await addDoc(collection(db, 'processos'), {
+          ...dados,
+          concluido: false,
+          comentarios: [],
+          criadoEm: serverTimestamp(),
+          atualizadoEm: serverTimestamp(),
+        });
+        total++;
+      }
+      await new Promise(r => setTimeout(r, 800));
+      mostrarToast(`Importando... ${numerosExistentes.size + total}/${DADOS_INICIAIS.length}`, 'info');
     }
-    mostrarToast('224 processos importados com sucesso!', 'ok');
+    mostrarToast(total + ' processos adicionados!', 'ok');
   }
 
   // ── FIREBASE: salvar processo ──
