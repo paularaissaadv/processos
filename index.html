@@ -428,8 +428,8 @@
 
 <style>
 :root {
-  --bg:#0f172a; --sur:#1e293b; --sur2:#0f172a; --bdr:#334155;
-  --txt:#e2e8f0; --mut:#64748b; --acc:#3b82f6; --yel:#fbbf24;
+  --bg:#f1f5f9; --sur:#ffffff; --sur2:#f8fafc; --bdr:#e2e8f0;
+  --txt:#1e293b; --mut:#64748b; --acc:#2563eb; --yel:#b45309;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;font-size:14px;min-height:100vh}
@@ -443,7 +443,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-se
 
 /* HEADER */
 .header{background:var(--sur);border-bottom:1px solid var(--bdr);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:50}
-.h-title{font-size:17px;font-weight:700;color:#f1f5f9;letter-spacing:-.3px}
+.h-title{font-size:17px;font-weight:700;color:#0f172a;letter-spacing:-.3px}
 .h-sub{font-size:11px;color:var(--mut);margin-top:2px}
 .h-badges{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .badge{border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700}
@@ -472,7 +472,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-se
 
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px}
-.stat{background:var(--sur);border-radius:10px;padding:16px;border:1px solid color-mix(in srgb, var(--c) 20%, transparent)}
+.stat{background:var(--sur);border-radius:10px;padding:16px;border:1px solid color-mix(in srgb, var(--c) 30%, transparent);box-shadow:0 1px 4px #0000000d}
 .stat-n{font-size:26px;font-weight:800;color:var(--c)}
 .stat-l{font-size:11px;color:var(--mut);margin-top:2px}
 
@@ -483,7 +483,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-se
 
 /* CARDS */
 .cards{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
-.card{background:var(--sur);border-radius:8px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;border:1px solid var(--bdr);border-left-width:3px}
+.card{background:var(--sur);border-radius:8px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;border:1px solid var(--bdr);border-left-width:3px;box-shadow:0 1px 4px #0000000d}
 .border-critica{border-left-color:#ef4444;border-color:#ef444422}
 .border-alta{border-left-color:#f97316;border-color:#f9731622}
 .border-media{border-left-color:#eab308;border-color:#eab30822}
@@ -492,12 +492,12 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-se
 .card-body{flex:1;min-width:0}
 .card-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
 .card-num{font-size:11px;color:var(--mut);font-family:monospace}
-.card-trib{font-size:11px;color:#94a3b8;background:var(--sur2);border-radius:4px;padding:1px 6px}
+.card-trib{font-size:11px;color:#64748b;background:var(--sur2);border-radius:4px;padding:1px 6px}
 .card-dias{font-size:11px;color:var(--mut)}
 .card-sit{font-size:11px;color:#a78bfa}
-.card-autor{font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:2px}
-.card-reu{font-size:12px;color:#94a3b8;margin-bottom:6px}
-.card-dilig{font-size:13px;color:var(--yel);background:#fbbf2415;border-radius:6px;padding:6px 10px;word-break:break-word}
+.card-autor{font-size:13px;font-weight:600;color:#0f172a;margin-bottom:2px}
+.card-reu{font-size:12px;color:#64748b;margin-bottom:6px}
+.card-dilig{font-size:13px;color:#92400e;background:#fef3c7;border-radius:6px;padding:6px 10px;word-break:break-word}
 .card-obs{font-size:11px;color:var(--mut);margin-top:4px}
 .card-footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
 .card-fase{font-size:11px;color:var(--mut);background:var(--sur2);border-radius:4px;padding:2px 7px}
@@ -519,11 +519,11 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-se
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead th{background:var(--sur);color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--bdr);white-space:nowrap}
 tbody tr{border-bottom:1px solid #1e293b;transition:background .1s}
-tbody tr:hover{background:#1e293b88}
+tbody tr:hover{background:#e2e8f088}
 tbody td{padding:10px 12px;vertical-align:top}
-.td-num{font-family:monospace;color:#94a3b8;white-space:nowrap}
+.td-num{font-family:monospace;color:#64748b;white-space:nowrap}
 .td-muted{color:var(--mut);font-size:11px}
-.td-dilig{color:var(--yel)}
+.td-dilig{color:#92400e}
 .mini-badge{border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap}
 .td-acoes{display:flex;gap:5px;align-items:center}
 
@@ -531,7 +531,7 @@ tbody td{padding:10px 12px;vertical-align:top}
 .modal-overlay{display:none;position:fixed;inset:0;background:#000c;align-items:center;justify-content:center;z-index:200;padding:16px}
 .modal-box{background:var(--sur);border:1px solid var(--bdr);border-radius:14px;padding:28px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.modal-header h2{font-size:16px;font-weight:700;color:#f1f5f9}
+.modal-header h2{font-size:16px;font-weight:700;color:#0f172a}
 .modal-close{background:none;border:none;color:var(--mut);font-size:20px;cursor:pointer;line-height:1}
 .modal-close:hover{color:var(--txt)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -546,15 +546,15 @@ tbody td{padding:10px 12px;vertical-align:top}
 .btn-save:hover{background:#1d4ed8}
 .status-info{background:var(--sur2);border-radius:8px;padding:12px 14px;margin-bottom:16px}
 .status-num{font-family:monospace;font-size:11px;color:var(--mut);margin-bottom:2px}
-.status-partes{font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:6px}
-.status-dilig-atual{font-size:12px;color:var(--yel)}
+.status-partes{font-size:13px;font-weight:600;color:#0f172a;margin-bottom:6px}
+.status-dilig-atual{font-size:12px;color:#92400e}
 .coments-box{background:var(--sur2);border-radius:8px;padding:12px;margin:14px 0;max-height:160px;overflow-y:auto}
 .coments-title{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
 .coment-item{border-bottom:1px solid var(--bdr);padding:8px 0}
 .coment-item:last-child{border-bottom:none}
-.coment-item strong{font-size:12px;color:#f1f5f9}
+.coment-item strong{font-size:12px;color:#0f172a}
 .coment-item .td-muted{font-size:10px;margin-left:8px}
-.coment-item p{font-size:12px;color:#94a3b8;margin-top:2px}
+.coment-item p{font-size:12px;color:#64748b;margin-top:2px}
 .divider{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 
 .vazio{text-align:center;color:var(--mut);padding:60px;font-size:15px}
@@ -574,7 +574,7 @@ tbody td{padding:10px 12px;vertical-align:top}
 <div class="header">
   <div>
     <div class="h-title">⚖️ Gestão de Processos</div>
-    <div class="h-sub">Paula Raissa dos Santos Rodrigues — OAB/PI nº 19.994 &nbsp;|&nbsp; Sephani Barros de Sousa — OAB/PI nº 19.048</div>
+    <div class="h-sub">Paula Raissa dos Santos Rodrigues — OAB/PI nº 19.994</div>
   </div>
   <div class="h-badges">
     <span class="badge badge-r" id="badge-crit">— críticos</span>
@@ -664,7 +664,7 @@ tbody td{padding:10px 12px;vertical-align:top}
       <div id="coments-lista"></div>
     </div>
     <div class="form-grid">
-      <div><label class="form-label">Seu nome</label><input class="form-input" id="s-autor" placeholder="Ex: Sephani"></div>
+      <div><label class="form-label">Seu nome</label><input class="form-input" id="s-autor" placeholder="Ex: Maria"></div>
       <div class="form-full"><label class="form-label">Novo comentário</label><textarea class="form-textarea" id="s-comentario" rows="2" placeholder="Ex: Ligamos para a vara, informaram que..."></textarea></div>
     </div>
     <div class="modal-footer">
