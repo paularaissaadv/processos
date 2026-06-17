@@ -580,6 +580,55 @@ tbody td{padding:10px 12px;vertical-align:top}
 </head>
 <body>
 
+<!-- TELA DE ACESSO -->
+<div id="tela-acesso" style="display:none;position:fixed;inset:0;background:#f1f5f9;z-index:9999;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:40px 36px;max-width:380px;width:90%;box-shadow:0 4px 24px #0000001a;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">⚖️</div>
+    <div style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:4px">Paula Raissa Advogados</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:28px">Sistema de Gestão de Processos</div>
+    <input id="campo-senha" type="password" placeholder="Digite a senha de acesso"
+      style="width:100%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;font-size:14px;outline:none;margin-bottom:12px;box-sizing:border-box;text-align:center"
+      onkeydown="if(event.key==='Enter') verificarSenha()">
+    <div id="erro-senha" style="color:#ef4444;font-size:12px;margin-bottom:10px;display:none">Senha incorreta. Tente novamente.</div>
+    <button onclick="verificarSenha()"
+      style="width:100%;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">
+      Entrar
+    </button>
+    <div style="font-size:11px;color:#94a3b8;margin-top:20px">Acesso restrito · Uso interno</div>
+  </div>
+</div>
+
+<script>
+  // ══════════════════════════════════
+  // SENHA DE ACESSO — altere aqui
+  const SENHA_ACESSO = "124455";
+  // ══════════════════════════════════
+
+  function verificarSenha() {
+    const campo = document.getElementById('campo-senha');
+    const erro = document.getElementById('erro-senha');
+    if (campo.value === SENHA_ACESSO) {
+      sessionStorage.setItem('acesso_liberado', '1');
+      document.getElementById('tela-acesso').style.display = 'none';
+    } else {
+      erro.style.display = 'block';
+      campo.value = '';
+      campo.focus();
+    }
+  }
+
+  // Verificar ao carregar
+  if (sessionStorage.getItem('acesso_liberado') !== '1') {
+    document.getElementById('tela-acesso').style.display = 'flex';
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('campo-senha').focus();
+    });
+  } else {
+    document.getElementById('tela-acesso').style.display = 'none';
+  }
+</script>
+
+
 <div id="toast" class="toast"></div>
 
 <!-- HEADER -->
