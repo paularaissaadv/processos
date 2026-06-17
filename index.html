@@ -42,19 +42,26 @@
     const d = new Date(dateStr);
     return isNaN(d) ? 999 : Math.floor((new Date() - d) / 86400000);
   }
+  function faixaParado(dias) {
+    if (dias > 60) return 'p60';
+    if (dias > 30) return 'p30';
+    if (dias > 15) return 'p15';
+    return 'p0';
+  }
+  const PARADO = {
+    p60: { label: '+60 dias',     cor: '#ef4444' },
+    p30: { label: '31–60 dias',   cor: '#f97316' },
+    p15: { label: '16–30 dias',   cor: '#eab308' },
+    p0:  { label: 'até 15 dias',  cor: '#22c55e' },
+  };
   function urgencia(p) {
-    const dias = diasSem(p.dataUltimoMovimento);
     if (!p.diligencia || !p.diligencia.trim()) return 'ok';
-    if (dias > 60) return 'critica';
-    if (dias > 30) return 'alta';
-    if (dias > 14) return 'media';
-    return 'baixa';
+    if (p.prioridade === 'urgente') return 'urgente';
+    return 'atencao'; // padrão: atenção, até ser marcado como urgente
   }
   const URG = {
-    critica: { label: 'CRÍTICO',        cor: '#ef4444', bg: '#dc2626' },
-    alta:    { label: 'URGENTE',        cor: '#f97316', bg: '#ea580c' },
-    media:   { label: 'ATENÇÃO',        cor: '#eab308', bg: '#ca8a04' },
-    baixa:   { label: 'OK',             cor: '#22c55e', bg: '#16a34a' },
+    urgente: { label: 'URGENTE',        cor: '#ef4444', bg: '#dc2626' },
+    atencao: { label: 'ATENÇÃO',        cor: '#eab308', bg: '#ca8a04' },
     ok:      { label: 'SEM DILIGÊNCIA', cor: '#475569', bg: '#475569' },
   };
 
@@ -154,6 +161,7 @@
       busca: (document.getElementById('busca')?.value || '').toLowerCase(),
       tribunal: document.getElementById('filtroTribunal')?.value || '',
       urg: document.getElementById('filtroUrg')?.value || '',
+      parado: document.getElementById('filtroParado')?.value || '',
       papel: document.getElementById('filtroPapel')?.value || '',
     };
   }
@@ -161,8 +169,10 @@
     const f = getF();
     return lista.filter(p => {
       const u = urgencia(p);
+      const fp = faixaParado(diasSem(p.dataUltimoMovimento));
       return (!f.tribunal || p.tribunal === f.tribunal)
           && (!f.urg || u === f.urg)
+          && (!f.parado || fp === f.parado)
           && (!f.papel || (f.papel === 'adv' && p.papel === 'adv') || (f.papel === 'equipe' && p.papel !== 'adv'))
           && (!f.busca || (p.numero||'').toLowerCase().includes(f.busca)
               || (p.autor||'').toLowerCase().includes(f.busca)
@@ -175,20 +185,20 @@
   function renderPainel() {
     const lista = filtrar(processos);
     const pendentes = lista.filter(p => p.diligencia && p.diligencia.trim());
-    const totalCrit = processos.filter(p => urgencia(p)==='critica').length;
-    const totalPend = processos.filter(p => p.diligencia && p.diligencia.trim()).length;
+    const totalUrgente = processos.filter(p => urgencia(p)==='urgente').length;
+    const totalAtencao = processos.filter(p => urgencia(p)==='atencao').length;
     const semDilig = processos.filter(p => !p.diligencia || !p.diligencia.trim()).length;
 
     let html = `<div class="stats">
       <div class="stat" style="--c:#3b82f6"><div class="stat-n">${processos.length}</div><div class="stat-l">Total</div></div>
-      <div class="stat" style="--c:#f97316"><div class="stat-n">${totalPend}</div><div class="stat-l">Com diligência</div></div>
-      <div class="stat" style="--c:#ef4444"><div class="stat-n">${totalCrit}</div><div class="stat-l">Críticos +60d</div></div>
+      <div class="stat" style="--c:#ef4444"><div class="stat-n">${totalUrgente}</div><div class="stat-l">Urgentes</div></div>
+      <div class="stat" style="--c:#eab308"><div class="stat-n">${totalAtencao}</div><div class="stat-l">Atenção</div></div>
       <div class="stat" style="--c:#475569"><div class="stat-n">${semDilig}</div><div class="stat-l">Sem diligência</div></div>
     </div>`;
 
     document.getElementById('count').textContent = pendentes.length + ' exibidos';
 
-    const niveis = ['critica','alta','media','baixa'];
+    const niveis = ['urgente','atencao'];
     let algum = false;
     for (const n of niveis) {
       const grupo = pendentes.filter(p => urgencia(p) === n);
@@ -223,9 +233,11 @@
     for (const p of lista) {
       const u = urgencia(p);
       const dias = diasSem(p.dataUltimoMovimento);
+      const fp = faixaParado(dias);
       const coments = (p.comentarios||[]).length;
       rows += `<tr data-fbid="${p.fbId}">
         <td><span class="mini-badge" style="background:${URG[u].bg}">${URG[u].label}</span></td>
+        <td><span class="mini-badge" style="background:${PARADO[fp].cor}">${PARADO[fp].label}</span></td>
         <td class="td-num">${esc(p.numero)}</td>
         <td>${esc(p.tribunal)}</td>
         <td><strong>${esc(p.autor)}</strong><br><span class="td-muted">vs ${esc(p.reu)}</span></td>
@@ -242,19 +254,20 @@
     }
     document.getElementById('page-todos').innerHTML = `
       <div class="table-wrap"><table>
-        <thead><tr><th>Status</th><th>Processo</th><th>Tribunal</th><th>Partes</th><th>Fase</th><th>Último mov.</th><th>Diligência</th><th>💬</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Status</th><th>Parado</th><th>Processo</th><th>Tribunal</th><th>Partes</th><th>Fase</th><th>Último mov.</th><th>Diligência</th><th>💬</th><th>Ações</th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>`;
     bindTodos();
   }
 
   function cardHTML(p, dias, coments) {
+    const fp = faixaParado(dias);
     return `<div class="card border-${urgencia(p)}" data-fbid="${p.fbId}">
       <div class="card-body">
         <div class="card-meta">
           <span class="card-num">${esc(p.numero)}</span>
           <span class="card-trib">${esc(p.tribunal)}</span>
-          <span class="card-dias">${dias}d</span>
+          <span class="mini-badge" style="background:${PARADO[fp].cor}">${PARADO[fp].label}</span>
           ${p.situacaoAtual ? `<span class="card-sit">${esc(p.situacaoAtual)}</span>` : ''}
         </div>
         <div class="card-autor">${esc(p.autor)}</div>
@@ -292,8 +305,8 @@
 
   // ── HEADER ──
   function atualizarHeader() {
-    const crit = processos.filter(p => urgencia(p) === 'critica').length;
-    document.getElementById('badge-crit').textContent = crit + ' críticos';
+    const urg = processos.filter(p => urgencia(p) === 'urgente').length;
+    document.getElementById('badge-crit').textContent = urg + ' urgentes';
     document.getElementById('badge-total').textContent = processos.length + ' processos';
     document.getElementById('badge-data').textContent = new Date().toLocaleDateString('pt-BR');
   }
@@ -318,6 +331,7 @@
       const el = document.getElementById(id); if(el) el.value = '';
     });
     document.getElementById('f-dataMov').value = new Date().toISOString().split('T')[0];
+    document.getElementById('f-prio-atencao').checked = true;
   }
   function preencherForm(p) {
     document.getElementById('f-numero').value = p.numero || '';
@@ -330,6 +344,9 @@
     document.getElementById('f-dataMov').value = p.dataUltimoMovimento || '';
     document.getElementById('f-situacao').value = p.situacaoAtual || '';
     document.getElementById('f-diligencia').value = p.diligencia || '';
+    const prioAtual = p.prioridade === 'urgente' ? 'urgente' : 'atencao';
+    document.getElementById('f-prio-urgente').checked = prioAtual === 'urgente';
+    document.getElementById('f-prio-atencao').checked = prioAtual === 'atencao';
     document.getElementById('f-obs').value = (p.observacao === 'nan' ? '' : p.observacao) || '';
   }
   function submitForm() {
@@ -345,6 +362,7 @@
       dataUltimoMovimento: document.getElementById('f-dataMov').value,
       situacaoAtual: document.getElementById('f-situacao').value.trim(),
       diligencia: document.getElementById('f-diligencia').value.trim(),
+      prioridade: document.querySelector('input[name="f-prio"]:checked')?.value || 'atencao',
       observacao: document.getElementById('f-obs').value.trim(),
     };
     salvarProcesso(dados);
@@ -367,6 +385,10 @@
     document.getElementById('s-dataMov').value = p.dataUltimoMovimento || '';
     document.getElementById('s-situacao').value = p.situacaoAtual || '';
     document.getElementById('s-diligencia').value = p.diligencia || '';
+    const prioAtual = p.prioridade === 'urgente' ? 'urgente' : 'atencao';
+    document.getElementById('s-prioridade').value = prioAtual;
+    document.getElementById('prio-urgente').checked = prioAtual === 'urgente';
+    document.getElementById('prio-atencao').checked = prioAtual === 'atencao';
     document.getElementById('coments-lista').innerHTML = comentHTML;
     document.getElementById('s-comentario').value = '';
     document.getElementById('s-autor').value = '';
@@ -384,6 +406,7 @@
       dataUltimoMovimento: document.getElementById('s-dataMov').value,
       situacaoAtual: document.getElementById('s-situacao').value.trim(),
       diligencia: document.getElementById('s-diligencia').value.trim(),
+      prioridade: document.querySelector('input[name="prio"]:checked')?.value || 'atencao',
       comentarios: coments,
     };
     salvarStatus(dados);
@@ -496,10 +519,8 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-se
 /* CARDS */
 .cards{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
 .card{background:var(--sur);border-radius:8px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;border:1px solid var(--bdr);border-left-width:3px;box-shadow:0 1px 4px #0000000d}
-.border-critica{border-left-color:#ef4444;border-color:#ef444422}
-.border-alta{border-left-color:#f97316;border-color:#f9731622}
-.border-media{border-left-color:#eab308;border-color:#eab30822}
-.border-baixa{border-left-color:#22c55e;border-color:#22c55e22}
+.border-urgente{border-left-color:#ef4444;border-color:#ef444422}
+.border-atencao{border-left-color:#eab308;border-color:#eab30822}
 .border-ok{border-left-color:var(--mut)}
 .card-body{flex:1;min-width:0}
 .card-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
@@ -568,6 +589,12 @@ tbody td{padding:10px 12px;vertical-align:top}
 .coment-item .td-muted{font-size:10px;margin-left:8px}
 .coment-item p{font-size:12px;color:#64748b;margin-top:2px}
 .divider{border:none;border-top:1px solid var(--bdr);margin:14px 0}
+
+.prio-toggle{display:flex;gap:10px}
+.prio-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:2px solid var(--bdr);border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;background:var(--sur2);transition:all .15s}
+.prio-opt input{margin:0}
+.prio-urgente:has(input:checked){border-color:#ef4444;background:#fef2f2;color:#dc2626}
+.prio-atencao:has(input:checked){border-color:#eab308;background:#fefce8;color:#ca8a04}
 
 .vazio{text-align:center;color:var(--mut);padding:60px;font-size:15px}
 
@@ -659,11 +686,16 @@ tbody td{padding:10px 12px;vertical-align:top}
   </select>
   <select id="filtroUrg" onchange="renderAtivo()">
     <option value="">Todos os status</option>
-    <option value="critica">🔴 Crítico (+60d)</option>
-    <option value="alta">🟠 Urgente (31-60d)</option>
-    <option value="media">🟡 Atenção (15-30d)</option>
-    <option value="baixa">🟢 OK (até 14d)</option>
+    <option value="urgente">🔴 Urgente</option>
+    <option value="atencao">🟡 Atenção</option>
     <option value="ok">⚪ Sem diligência</option>
+  </select>
+  <select id="filtroParado" onchange="renderAtivo()">
+    <option value="">Tempo parado: todos</option>
+    <option value="p60">+60 dias</option>
+    <option value="p30">31–60 dias</option>
+    <option value="p15">16–30 dias</option>
+    <option value="p0">até 15 dias</option>
   </select>
   <span id="count"></span>
 </div>
@@ -692,6 +724,13 @@ tbody td{padding:10px 12px;vertical-align:top}
       <div><label class="form-label">Data do Último Movimento</label><input class="form-input form-date" id="f-dataMov" type="date"></div>
       <div><label class="form-label">Situação Atual</label><input class="form-input" id="f-situacao"></div>
       <div class="form-full"><label class="form-label">Diligência a Fazer</label><textarea class="form-textarea" id="f-diligencia" rows="2"></textarea></div>
+      <div class="form-full">
+        <label class="form-label">Prioridade desta diligência</label>
+        <div class="prio-toggle">
+          <label class="prio-opt prio-urgente"><input type="radio" name="f-prio" value="urgente" id="f-prio-urgente"> 🔴 Urgente</label>
+          <label class="prio-opt prio-atencao"><input type="radio" name="f-prio" value="atencao" id="f-prio-atencao" checked> 🟡 Atenção</label>
+        </div>
+      </div>
       <div class="form-full"><label class="form-label">Observações</label><textarea class="form-textarea" id="f-obs" rows="2"></textarea></div>
     </div>
     <div class="modal-footer">
@@ -718,6 +757,14 @@ tbody td{padding:10px 12px;vertical-align:top}
       <div><label class="form-label">Data do movimento</label><input class="form-input" id="s-dataMov" type="date"></div>
       <div><label class="form-label">Situação atual</label><input class="form-input" id="s-situacao"></div>
       <div class="form-full"><label class="form-label">Diligência pendente (atualizar ou apagar se concluída)</label><textarea class="form-textarea" id="s-diligencia" rows="2"></textarea></div>
+      <div class="form-full">
+        <label class="form-label">Prioridade desta diligência</label>
+        <div class="prio-toggle">
+          <label class="prio-opt prio-urgente"><input type="radio" name="prio" value="urgente" id="prio-urgente"> 🔴 Urgente</label>
+          <label class="prio-opt prio-atencao"><input type="radio" name="prio" value="atencao" id="prio-atencao"> 🟡 Atenção</label>
+        </div>
+        <input type="hidden" id="s-prioridade" value="atencao">
+      </div>
     </div>
     <hr class="divider">
     <div class="coments-box">
