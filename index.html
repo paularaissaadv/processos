@@ -37,10 +37,22 @@
   let unsubscribe = null;
 
   // ── URGÊNCIA ──
+  function parseDataLocal(dateStr) {
+    // Evita o bug de timezone: "2026-06-16" não pode ser interpretado como UTC,
+    // senão em fusos negativos (Brasil) ele "volta" um dia.
+    if (!dateStr) return null;
+    const partes = String(dateStr).split('-');
+    if (partes.length !== 3) { const d = new Date(dateStr); return isNaN(d) ? null : d; }
+    const [ano, mes, dia] = partes.map(Number);
+    const d = new Date(ano, mes - 1, dia);
+    return isNaN(d) ? null : d;
+  }
   function diasSem(dateStr) {
-    if (!dateStr) return 999;
-    const d = new Date(dateStr);
-    return isNaN(d) ? 999 : Math.floor((new Date() - d) / 86400000);
+    const d = parseDataLocal(dateStr);
+    if (!d) return 999;
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    d.setHours(0,0,0,0);
+    return Math.floor((hoje - d) / 86400000);
   }
   function faixaParado(dias) {
     if (dias > 60) return 'p60';
@@ -67,7 +79,8 @@
 
   function fmtData(d) {
     if (!d) return '—';
-    const dt = new Date(d); if (isNaN(dt)) return d;
+    const dt = parseDataLocal(d);
+    if (!dt) return d;
     return dt.toLocaleDateString('pt-BR');
   }
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
