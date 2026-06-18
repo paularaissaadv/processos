@@ -386,11 +386,8 @@
     processoAtivo = processos.find(p => p.fbId === fbId);
     if (!processoAtivo) return;
     modalModo = 'status';
+    renderComentarios();
     const p = processoAtivo;
-    const coments = (p.comentarios||[]);
-    const comentHTML = coments.length
-      ? coments.map(c => `<div class="coment-item"><strong>${esc(c.autor)}</strong> <span class="td-muted">${c.data||''}</span><p>${esc(c.texto)}</p></div>`).join('')
-      : '<div class="td-muted" style="padding:8px 0">Nenhum comentário ainda.</div>';
     document.getElementById('status-titulo').textContent = p.numero;
     document.getElementById('status-autor').textContent = p.autor + ' vs ' + p.reu;
     document.getElementById('status-dilig').textContent = p.diligencia || 'Sem diligência definida';
@@ -402,11 +399,39 @@
     document.getElementById('s-prioridade').value = prioAtual;
     document.getElementById('prio-urgente').checked = prioAtual === 'urgente';
     document.getElementById('prio-atencao').checked = prioAtual === 'atencao';
-    document.getElementById('coments-lista').innerHTML = comentHTML;
     document.getElementById('s-comentario').value = '';
     document.getElementById('s-autor').value = '';
     document.getElementById('modal-status').style.display = 'flex';
   }
+
+  function renderComentarios() {
+    const coments = (processoAtivo.comentarios||[]);
+    const comentHTML = coments.length
+      ? coments.map((c,i) => `<div class="coment-item">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div><strong>${esc(c.autor)}</strong> <span class="td-muted">${c.data||''}</span><p>${esc(c.texto)}</p></div>
+            <button class="btn-del-coment" data-idx="${i}" title="Excluir comentário">✕</button>
+          </div>
+        </div>`).join('')
+      : '<div class="td-muted" style="padding:8px 0">Nenhum comentário ainda.</div>';
+    document.getElementById('coments-lista').innerHTML = comentHTML;
+    document.querySelectorAll('.btn-del-coment').forEach(b => b.onclick = () => excluirComentario(parseInt(b.dataset.idx)));
+  }
+
+  async function excluirComentario(idx) {
+    if (!confirm('Excluir este comentário?')) return;
+    const coments = [...(processoAtivo.comentarios||[])];
+    coments.splice(idx, 1);
+    try {
+      await updateDoc(doc(db, 'processos', processoAtivo.fbId), {
+        comentarios: coments, atualizadoEm: serverTimestamp()
+      });
+      processoAtivo.comentarios = coments;
+      renderComentarios();
+      mostrarToast('Comentário excluído.', 'ok');
+    } catch(e) { mostrarToast('Erro ao excluir comentário.', 'erro'); }
+  }
+
   function submitStatus() {
     const novoComent = document.getElementById('s-comentario').value.trim();
     const autorComent = document.getElementById('s-autor').value.trim() || 'Equipe';
@@ -601,6 +626,8 @@ tbody td{padding:10px 12px;vertical-align:top}
 .coment-item strong{font-size:12px;color:#0f172a}
 .coment-item .td-muted{font-size:10px;margin-left:8px}
 .coment-item p{font-size:12px;color:#64748b;margin-top:2px}
+.btn-del-coment{background:none;border:none;color:#cbd5e1;font-size:14px;cursor:pointer;padding:2px 6px;line-height:1;flex-shrink:0}
+.btn-del-coment:hover{color:#ef4444}
 .divider{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 
 .prio-toggle{display:flex;gap:10px}
