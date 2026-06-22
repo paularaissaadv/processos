@@ -173,6 +173,7 @@
     return {
       busca: (document.getElementById('busca')?.value || '').toLowerCase(),
       tribunal: document.getElementById('filtroTribunal')?.value || '',
+      fase: document.getElementById('filtroFase')?.value || '',
       urg: document.getElementById('filtroUrg')?.value || '',
       parado: document.getElementById('filtroParado')?.value || '',
       papel: document.getElementById('filtroPapel')?.value || '',
@@ -184,6 +185,7 @@
       const u = urgencia(p);
       const fp = faixaParado(diasSem(p.dataUltimoMovimento));
       return (!f.tribunal || p.tribunal === f.tribunal)
+          && (!f.fase || p.fase === f.fase)
           && (!f.urg || u === f.urg)
           && (!f.parado || fp === f.parado)
           && (!f.papel || (f.papel === 'adv' && p.papel === 'adv') || (f.papel === 'equipe' && p.papel !== 'adv'))
@@ -409,7 +411,13 @@
     const comentHTML = coments.length
       ? coments.map((c,i) => `<div class="coment-item">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-            <div><strong>${esc(c.autor)}</strong> <span class="td-muted">${c.data||''}</span><p>${esc(c.texto)}</p></div>
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                <strong style="font-size:12px;color:#0f172a">${esc(c.autor)}</strong>
+                ${c.data ? `<span style="background:#e2e8f0;color:#475569;font-size:10px;font-weight:600;border-radius:4px;padding:2px 6px">📅 ${esc(c.data)}</span>` : ''}
+              </div>
+              <p style="font-size:12px;color:#475569;line-height:1.5">${esc(c.texto)}</p>
+            </div>
             <button class="btn-del-coment" data-idx="${i}" title="Excluir comentário">✕</button>
           </div>
         </div>`).join('')
@@ -477,9 +485,13 @@
 
   // ── POPULAR FILTROS ──
   function popularFiltros() {
-    const sel = document.getElementById('filtroTribunal');
+    const selTrib = document.getElementById('filtroTribunal');
     const tribunais = [...new Set(processos.map(p=>p.tribunal))].filter(Boolean).sort();
-    sel.innerHTML = '<option value="">Todos os tribunais</option>' + tribunais.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    selTrib.innerHTML = '<option value="">Todos os tribunais</option>' + tribunais.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+
+    const selFase = document.getElementById('filtroFase');
+    const fases = [...new Set(processos.map(p=>p.fase))].filter(Boolean).sort();
+    selFase.innerHTML = '<option value="">Todas as fases</option>' + fases.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join('');
   }
 
   // ── EXPOR FUNÇÕES PARA HTML ──
@@ -723,6 +735,9 @@ tbody td{padding:10px 12px;vertical-align:top}
   <input type="text" id="busca" placeholder="Buscar por número, autor, réu ou diligência..." oninput="renderAtivo()">
   <select id="filtroTribunal" onchange="renderAtivo()">
     <option value="">Todos os tribunais</option>
+  </select>
+  <select id="filtroFase" onchange="renderAtivo()">
+    <option value="">Todas as fases</option>
   </select>
   <select id="filtroUrg" onchange="renderAtivo()">
     <option value="">Todos os status</option>
