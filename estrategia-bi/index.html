@@ -182,18 +182,14 @@
     margin-bottom:8px;
   }
   .req-item-head{
-    display:flex;
-    flex-wrap:wrap;
-    gap:14px;
     font-size:12px;
-    color:var(--text);
+    color:var(--accent);
     margin-bottom:8px;
-    font-weight:600;
+    font-weight:700;
   }
-  .req-item-head span.muted{color:var(--muted);font-weight:400;}
   .req-item-fields{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:1fr 1fr 1fr;
     gap:8px;
   }
   .req-item-fields .full{grid-column:1/-1;}
@@ -404,6 +400,27 @@ function parseBrDate(br){
   if(!m) return 0;
   return new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime();
 }
+function buildReqList(c, st){
+  const overrides = st.reqOverrides || {};
+  const seedList = c.requerimentos.map(r => {
+    const ov = overrides[r.protocolo];
+    return {
+      reqKey: r.protocolo,
+      source: 'seed',
+      protocolo: ov?.protocolo ?? r.protocolo,
+      data: ov?.data ?? r.data,
+      unidade: ov?.unidade ?? r.unidade
+    };
+  });
+  const extraList = (st.requerimentosExtras || []).map(r => ({
+    reqKey: r.id,
+    source: 'extra',
+    protocolo: r.protocolo,
+    data: r.data,
+    unidade: r.unidade
+  }));
+  return seedList.concat(extraList).sort((a,b) => parseBrDate(a.data) - parseBrDate(b.data));
+}
 
 window.iniciarApp = async function(){
   const root = document.getElementById('root');
@@ -421,7 +438,7 @@ window.iniciarApp = async function(){
     allClients = SEED_CLIENTS.concat(manualClients);
     for(const c of allClients){
       const key = slug(c.cpf);
-      clientsState[c.cpf] = remote[key] || {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[]};
+      clientsState[c.cpf] = remote[key] || {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[], reqOverrides:{}};
     }
   }catch(e){
     console.error(e);
@@ -555,12 +572,11 @@ function escapeHtml(s){
 
 function cardHtml(c){
   const key = slug(c.cpf);
-  const st = clientsState[c.cpf] || {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[]};
+  const st = clientsState[c.cpf] || {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[], reqOverrides:{}};
   const resultados = st.resultados || {};
   const locaisPericia = st.locaisPericia || {};
   const motivosNegativa = st.motivosNegativa || {};
-  const extras = st.requerimentosExtras || [];
-  const reqs = c.requerimentos.concat(extras).slice().sort((a,b) => parseBrDate(a.data) - parseBrDate(b.data));
+  const reqs = buildReqList(c, st);
   return `
   <div class="card" id="card-${key}">
     <div class="card-head" id="head-${key}">
@@ -574,26 +590,34 @@ function cardHtml(c){
     </div>
     <div class="card-body">
       <div class="hist">
-        <div class="hist-title">Histórico de requerimentos (INSS) — ordem crescente de protocolo</div>
+        <div class="hist-title">Histórico de requerimentos (INSS) — ordem cronológica (mais antigo → mais novo)</div>
         ${reqs.map((r,i) => `
-          <div class="req-item">
-            <div class="req-item-head">
-              <span>#${i+1} · Protocolo ${r.protocolo}</span>
-              <span class="muted">Entrada: ${r.data}</span>
-              <span class="muted">${r.unidade}</span>
-            </div>
+          <div class="req-item" data-reqkey="${r.reqKey}" data-source="${r.source}">
+            <div class="req-item-head">#${i+1}</div>
             <div class="req-item-fields">
+              <div>
+                <label>Protocolo</label>
+                <input type="text" id="reqprotocolo-${key}-${r.reqKey}" value="${escapeHtml(r.protocolo)}">
+              </div>
+              <div>
+                <label>Data de entrada</label>
+                <input type="date" id="reqdata-${key}-${r.reqKey}" value="${brToIso(r.data)}">
+              </div>
+              <div>
+                <label>Unidade</label>
+                <input type="text" id="requnidade-${key}-${r.reqKey}" value="${escapeHtml(r.unidade)}">
+              </div>
               <div class="full">
                 <label>Resultado</label>
-                <input type="text" id="res-${key}-${r.protocolo}" placeholder="Ex: indeferido, concedido, em exigência..." value="${escapeHtml(resultados[r.protocolo]||'')}">
+                <input type="text" id="res-${key}-${r.reqKey}" placeholder="Ex: indeferido, concedido, em exigência..." value="${escapeHtml(resultados[r.reqKey]||'')}">
               </div>
               <div>
                 <label>Onde foi realizada a perícia médica</label>
-                <input type="text" id="pericia-${key}-${r.protocolo}" placeholder="Ex: APS Teresina-Leste, perícia social, telemedicina..." value="${escapeHtml(locaisPericia[r.protocolo]||'')}">
+                <input type="text" id="pericia-${key}-${r.reqKey}" placeholder="Ex: APS Teresina-Leste, perícia social, telemedicina..." value="${escapeHtml(locaisPericia[r.reqKey]||'')}">
               </div>
               <div>
-                <label>Motivo da negativa (se houver)</label>
-                <input type="text" id="motivo-${key}-${r.protocolo}" placeholder="Ex: capacidade laborativa preservada, falta de qualidade de segurado..." value="${escapeHtml(motivosNegativa[r.protocolo]||'')}">
+                <label>Motivo da negativa/concessão</label>
+                <input type="text" id="motivo-${key}-${r.reqKey}" placeholder="Ex: capacidade laborativa preservada, falta de qualidade de segurado, laudo favorável..." value="${escapeHtml(motivosNegativa[r.reqKey]||'')}">
               </div>
             </div>
           </div>
@@ -667,9 +691,10 @@ function addRequerimento(cpf){
     alert('Informe ao menos o número do protocolo.');
     return;
   }
-  const st = clientsState[cpf] || {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[]};
+  const st = clientsState[cpf] || {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[], reqOverrides:{}};
   st.requerimentosExtras = st.requerimentosExtras || [];
   st.requerimentosExtras.push({
+    id: 'ex_' + Date.now() + '_' + Math.floor(Math.random()*10000),
     protocolo,
     data: isoToBr(dataIso) || '(não informado)',
     unidade: unidade || '(não informado)',
@@ -686,15 +711,35 @@ async function saveClient(cpf, silent){
   const resultados = {};
   const locaisPericia = {};
   const motivosNegativa = {};
+  const reqOverrides = {};
+  let novasExtras = (prev.requerimentosExtras || []).map(r => ({...r}));
   if(c){
-    const allReqs = c.requerimentos.concat(prev.requerimentosExtras || []);
-    allReqs.forEach(r => {
-      const elRes = document.getElementById('res-'+key+'-'+r.protocolo);
-      if(elRes) resultados[r.protocolo] = elRes.value;
-      const elPericia = document.getElementById('pericia-'+key+'-'+r.protocolo);
-      if(elPericia) locaisPericia[r.protocolo] = elPericia.value;
-      const elMotivo = document.getElementById('motivo-'+key+'-'+r.protocolo);
-      if(elMotivo) motivosNegativa[r.protocolo] = elMotivo.value;
+    const reqList = buildReqList(c, prev);
+    reqList.forEach(r => {
+      const elProtocolo = document.getElementById('reqprotocolo-'+key+'-'+r.reqKey);
+      const elData = document.getElementById('reqdata-'+key+'-'+r.reqKey);
+      const elUnidade = document.getElementById('requnidade-'+key+'-'+r.reqKey);
+      const novoProtocolo = elProtocolo ? elProtocolo.value.trim() : r.protocolo;
+      const novaData = elData ? (isoToBr(elData.value) || r.data) : r.data;
+      const novaUnidade = elUnidade ? elUnidade.value.trim() : r.unidade;
+
+      if(r.source === 'seed'){
+        reqOverrides[r.reqKey] = { protocolo: novoProtocolo, data: novaData, unidade: novaUnidade };
+      } else {
+        const idx = novasExtras.findIndex(e => e.id === r.reqKey);
+        if(idx > -1){
+          novasExtras[idx].protocolo = novoProtocolo;
+          novasExtras[idx].data = novaData;
+          novasExtras[idx].unidade = novaUnidade;
+        }
+      }
+
+      const elRes = document.getElementById('res-'+key+'-'+r.reqKey);
+      if(elRes) resultados[r.reqKey] = elRes.value;
+      const elPericia = document.getElementById('pericia-'+key+'-'+r.reqKey);
+      if(elPericia) locaisPericia[r.reqKey] = elPericia.value;
+      const elMotivo = document.getElementById('motivo-'+key+'-'+r.reqKey);
+      if(elMotivo) motivosNegativa[r.reqKey] = elMotivo.value;
     });
   }
   const data = {
@@ -709,7 +754,8 @@ async function saveClient(cpf, silent){
     resultados: resultados,
     locaisPericia: locaisPericia,
     motivosNegativa: motivosNegativa,
-    requerimentosExtras: prev.requerimentosExtras || [],
+    reqOverrides: reqOverrides,
+    requerimentosExtras: novasExtras,
     atualizadoEm: new Date().toISOString()
   };
   clientsState[cpf] = data;
