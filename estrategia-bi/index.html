@@ -174,6 +174,36 @@
   .empty{color:var(--muted);font-size:13px;padding:20px;text-align:center;}
   .loading{color:var(--muted);font-size:13px;padding:20px;text-align:center;}
   .hist-table input[type=text]{width:100%;font-size:12px;padding:5px 7px;}
+  .req-item{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  .req-item-head{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    font-size:12px;
+    color:var(--text);
+    margin-bottom:8px;
+    font-weight:600;
+  }
+  .req-item-head span.muted{color:var(--muted);font-weight:400;}
+  .req-item-fields{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .req-item-fields .full{grid-column:1/-1;}
+  .req-item-fields label{
+    font-size:10px;
+    margin-bottom:3px;
+  }
+  .req-item-fields input[type=text]{
+    background:#fff;
+  }
   .add-req-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:flex-end;}
   .add-req-row > div{flex:1;min-width:110px;}
   .add-req-row label{margin-bottom:3px;}
@@ -368,6 +398,12 @@ function isoToBr(iso){
   if(!m) return '';
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
+function parseBrDate(br){
+  if(!br) return 0;
+  const m = br.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(!m) return 0;
+  return new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime();
+}
 
 window.iniciarApp = async function(){
   const root = document.getElementById('root');
@@ -385,7 +421,7 @@ window.iniciarApp = async function(){
     allClients = SEED_CLIENTS.concat(manualClients);
     for(const c of allClients){
       const key = slug(c.cpf);
-      clientsState[c.cpf] = remote[key] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:'', localPericia:'', resultados:{}, requerimentosExtras:[]};
+      clientsState[c.cpf] = remote[key] || {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[]};
     }
   }catch(e){
     console.error(e);
@@ -519,10 +555,12 @@ function escapeHtml(s){
 
 function cardHtml(c){
   const key = slug(c.cpf);
-  const st = clientsState[c.cpf] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:'', localPericia:'', resultados:{}, requerimentosExtras:[]};
+  const st = clientsState[c.cpf] || {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[]};
   const resultados = st.resultados || {};
+  const locaisPericia = st.locaisPericia || {};
+  const motivosNegativa = st.motivosNegativa || {};
   const extras = st.requerimentosExtras || [];
-  const reqs = c.requerimentos.concat(extras).slice().reverse();
+  const reqs = c.requerimentos.concat(extras).slice().sort((a,b) => parseBrDate(a.data) - parseBrDate(b.data));
   return `
   <div class="card" id="card-${key}">
     <div class="card-head" id="head-${key}">
@@ -536,15 +574,30 @@ function cardHtml(c){
     </div>
     <div class="card-body">
       <div class="hist">
-        <div class="hist-title">Histórico de requerimentos (INSS)</div>
-        <table class="hist-table">
-          ${reqs.map(r => `<tr>
-            <td>${r.protocolo}</td>
-            <td>${r.data}</td>
-            <td>${r.unidade}</td>
-            <td><input type="text" id="res-${key}-${r.protocolo}" placeholder="Resultado (ex: indeferido, concedido, em exigência...)" value="${escapeHtml(resultados[r.protocolo]||'')}"></td>
-          </tr>`).join('')}
-        </table>
+        <div class="hist-title">Histórico de requerimentos (INSS) — ordem crescente de protocolo</div>
+        ${reqs.map((r,i) => `
+          <div class="req-item">
+            <div class="req-item-head">
+              <span>#${i+1} · Protocolo ${r.protocolo}</span>
+              <span class="muted">Entrada: ${r.data}</span>
+              <span class="muted">${r.unidade}</span>
+            </div>
+            <div class="req-item-fields">
+              <div class="full">
+                <label>Resultado</label>
+                <input type="text" id="res-${key}-${r.protocolo}" placeholder="Ex: indeferido, concedido, em exigência..." value="${escapeHtml(resultados[r.protocolo]||'')}">
+              </div>
+              <div>
+                <label>Onde foi realizada a perícia médica</label>
+                <input type="text" id="pericia-${key}-${r.protocolo}" placeholder="Ex: APS Teresina-Leste, perícia social, telemedicina..." value="${escapeHtml(locaisPericia[r.protocolo]||'')}">
+              </div>
+              <div>
+                <label>Motivo da negativa (se houver)</label>
+                <input type="text" id="motivo-${key}-${r.protocolo}" placeholder="Ex: capacidade laborativa preservada, falta de qualidade de segurado..." value="${escapeHtml(motivosNegativa[r.protocolo]||'')}">
+              </div>
+            </div>
+          </div>
+        `).join('')}
         <button class="toggle-add" id="toggleAddReq-${key}" type="button">+ Adicionar requerimento manualmente</button>
         <div class="new-client-form" id="addReqForm-${key}">
           <div class="add-req-row">
@@ -588,14 +641,6 @@ function cardHtml(c){
           </div>
         </div>
         <div class="full">
-          <label>Onde foi realizada a perícia médica</label>
-          <input type="text" id="localPericia-${key}" placeholder="Ex: APS Teresina-Leste, perícia social, telemedicina..." value="${escapeHtml(st.localPericia||'')}">
-        </div>
-        <div class="full">
-          <label>Motivo da(s) negativa(s) anterior(es)</label>
-          <textarea id="motivo-${key}" placeholder="Ex: perícia considerou capacidade laborativa preservada; ausência de qualidade de segurado; documentação médica insuficiente...">${escapeHtml(st.motivoNegativa||'')}</textarea>
-        </div>
-        <div class="full">
           <label>Estratégia para novo protocolo / recurso</label>
           <textarea id="estrategia-${key}" placeholder="Ex: reunir novos laudos, juntar exames complementares, protocolar com CID atualizado, ingressar com recurso na junta de recursos...">${escapeHtml(st.estrategia||'')}</textarea>
         </div>
@@ -622,7 +667,7 @@ function addRequerimento(cpf){
     alert('Informe ao menos o número do protocolo.');
     return;
   }
-  const st = clientsState[cpf] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:'', localPericia:'', resultados:{}, requerimentosExtras:[]};
+  const st = clientsState[cpf] || {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[]};
   st.requerimentosExtras = st.requerimentosExtras || [];
   st.requerimentosExtras.push({
     protocolo,
@@ -639,11 +684,17 @@ async function saveClient(cpf, silent){
   const c = allClients.find(cl => cl.cpf === cpf);
   const prev = clientsState[cpf] || {};
   const resultados = {};
+  const locaisPericia = {};
+  const motivosNegativa = {};
   if(c){
     const allReqs = c.requerimentos.concat(prev.requerimentosExtras || []);
     allReqs.forEach(r => {
-      const el = document.getElementById('res-'+key+'-'+r.protocolo);
-      if(el) resultados[r.protocolo] = el.value;
+      const elRes = document.getElementById('res-'+key+'-'+r.protocolo);
+      if(elRes) resultados[r.protocolo] = elRes.value;
+      const elPericia = document.getElementById('pericia-'+key+'-'+r.protocolo);
+      if(elPericia) locaisPericia[r.protocolo] = elPericia.value;
+      const elMotivo = document.getElementById('motivo-'+key+'-'+r.protocolo);
+      if(elMotivo) motivosNegativa[r.protocolo] = elMotivo.value;
     });
   }
   const data = {
@@ -653,11 +704,11 @@ async function saveClient(cpf, silent){
     dataCessacao: isoToBr(document.getElementById('cessacao-'+key)?.value || ''),
     loginMeuinss: document.getElementById('loginMeuinss-'+key)?.value || '',
     senhaMeuinss: document.getElementById('senhaMeuinss-'+key)?.value || '',
-    localPericia: document.getElementById('localPericia-'+key)?.value || '',
-    motivoNegativa: document.getElementById('motivo-'+key)?.value || '',
     estrategia: document.getElementById('estrategia-'+key)?.value || '',
     observacoes: document.getElementById('obs-'+key)?.value || '',
     resultados: resultados,
+    locaisPericia: locaisPericia,
+    motivosNegativa: motivosNegativa,
     requerimentosExtras: prev.requerimentosExtras || [],
     atualizadoEm: new Date().toISOString()
   };
