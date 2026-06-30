@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Estratégia APS — Benefício por Incapacidade</title>
+<style>
+  :root{
+    --bg:#0f1419;
+    --panel:#161c24;
+    --panel2:#1d2530;
+    --border:#2a3340;
+    --text:#e8edf3;
+    --muted:#8b97a6;
+    --accent:#3b82f6;
+    --accent2:#60a5fa;
+    --ativo:#22c55e;
+    --cessado:#f59e0b;
+    --negado:#ef4444;
+    --analise:#a78bfa;
+    --naoinformado:#475569;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:24px;
+  }
+  h1{
+    font-size:20px;
+    margin:0 0 4px 0;
+    font-weight:600;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:20px;
+  }
+  .toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  input[type=text], select{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:8px 10px;
+    border-radius:6px;
+    font-size:13px;
+  }
+  input[type=text]{min-width:220px;}
+  .stats{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .stat{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 14px;
+    min-width:110px;
+  }
+  .stat .num{font-size:20px;font-weight:700;}
+  .stat .lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+  .cards{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 16px;
+    cursor:pointer;
+    gap:12px;
+  }
+  .card-head:hover{background:var(--panel2);}
+  .ch-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .name{font-weight:600;font-size:14px;}
+  .cpf{color:var(--muted);font-size:12px;}
+  .badge{
+    font-size:11px;
+    padding:3px 9px;
+    border-radius:20px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .badge-ativo{background:rgba(34,197,94,.15);color:var(--ativo);border:1px solid rgba(34,197,94,.4);}
+  .badge-cessado{background:rgba(245,158,11,.15);color:var(--cessado);border:1px solid rgba(245,158,11,.4);}
+  .badge-negado{background:rgba(239,68,68,.15);color:var(--negado);border:1px solid rgba(239,68,68,.4);}
+  .badge-analise{background:rgba(167,139,250,.15);color:var(--analise);border:1px solid rgba(167,139,250,.4);}
+  .badge-naoinformado{background:rgba(71,85,105,.2);color:var(--muted);border:1px solid var(--border);}
+  .reqcount{font-size:11px;color:var(--muted);}
+  .chev{color:var(--muted);font-size:12px;transition:transform .15s;}
+  .card.open .chev{transform:rotate(90deg);}
+  .card-body{
+    display:none;
+    padding:0 16px 16px 16px;
+    border-top:1px solid var(--border);
+  }
+  .card.open .card-body{display:block;}
+  .hist{
+    margin:14px 0;
+    font-size:12px;
+  }
+  .hist-title{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+  table.hist-table{width:100%;border-collapse:collapse;}
+  table.hist-table td{padding:5px 8px;border-bottom:1px solid var(--border);font-size:12px;}
+  table.hist-table tr:last-child td{border-bottom:none;}
+  .field-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-top:14px;
+  }
+  .field-grid .full{grid-column:1/-1;}
+  label{
+    display:block;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:4px;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+  }
+  textarea, .field-grid select, .field-grid input{
+    width:100%;
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:8px 10px;
+    border-radius:6px;
+    font-size:13px;
+    font-family:inherit;
+    resize:vertical;
+  }
+  textarea{min-height:60px;}
+  .save-row{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+    margin-top:12px;
+  }
+  .save-msg{font-size:12px;color:var(--ativo);opacity:0;transition:opacity .3s;}
+  .save-msg.show{opacity:1;}
+  button.save{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  button.save:hover{background:var(--accent2);}
+  .empty{color:var(--muted);font-size:13px;padding:20px;text-align:center;}
+  .loading{color:var(--muted);font-size:13px;padding:20px;text-align:center;}
+</style>
+</head>
+<body>
+
+<h1>Estratégia APS — Benefício por Incapacidade</h1>
+<div class="subtitle">Acompanhamento de requerimentos administrativos junto ao INSS — histórico, status, motivos de indeferimento e estratégia de novo protocolo</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Buscar por nome ou CPF...">
+  <select id="filterStatus">
+    <option value="">Todos os status</option>
+    <option value="ativo">Ativo</option>
+    <option value="cessado">Cessado</option>
+    <option value="negado">Negado</option>
+    <option value="analise">Em análise / recurso</option>
+    <option value="naoinformado">Não informado</option>
+  </select>
+</div>
+
+<div id="root" class="loading">Carregando dados...</div>
+
+<script>
+const SEED_CLIENTS = [{"nome": "CICERO FERREIRA LIMA", "cpf": "473.957.613-91", "requerimentos": [{"protocolo": "1303673926", "data": "21/03/2025", "unidade": "TIMON", "ultimaAtualizacao": "26/06/2025 17:29"}, {"protocolo": "1179058425", "data": "04/09/2025", "unidade": "TIMON", "ultimaAtualizacao": "04/09/2025 11:23"}, {"protocolo": "1118874851", "data": "28/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "02/11/2025 03:11"}, {"protocolo": "1441001799", "data": "02/12/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "14/12/2025 02:11"}, {"protocolo": "726760047", "data": "16/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "24/01/2026 04:39"}, {"protocolo": "904253871", "data": "01/04/2026", "unidade": "TIMON", "ultimaAtualizacao": "14/04/2026 07:56"}, {"protocolo": "391501305", "data": "12/05/2026", "unidade": "TIMON", "ultimaAtualizacao": "27/05/2026 02:15"}]}, {"nome": "MIRIAM OLIVEIRA ALMEIDA ADRIANO", "cpf": "591.517.813-87", "requerimentos": [{"protocolo": "1432818577", "data": "04/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "02/05/2026 15:17"}, {"protocolo": "400031922", "data": "04/05/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "24/05/2026 02:06"}]}, {"nome": "ROSENILDO FALCAO LEAO", "cpf": "001.864.541-04", "requerimentos": [{"protocolo": "511843086", "data": "11/03/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "28/03/2026 14:30"}, {"protocolo": "1848469735", "data": "27/04/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/05/2026 07:53"}]}, {"nome": "NEIDIVAN DOS SANTOS RODRIGUES", "cpf": "462.599.883-20", "requerimentos": [{"protocolo": "1433536672", "data": "08/04/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "09/07/2025 22:18"}, {"protocolo": "1014674370", "data": "07/01/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "07/01/2026 10:53"}, {"protocolo": "1822962107", "data": "22/04/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "08/05/2026 03:09"}]}, {"nome": "MARIA DE LOURDES DO NASCIMENTO SANTOS", "cpf": "871.306.103-87", "requerimentos": [{"protocolo": "5644787", "data": "14/12/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "03/02/2026 18:09"}, {"protocolo": "840649111", "data": "10/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "05/03/2026 02:11"}, {"protocolo": "2043638293", "data": "17/04/2026", "unidade": "TIMON", "ultimaAtualizacao": "03/05/2026 03:07"}]}, {"nome": "KATIA SILENE DOS SANTOS NASCIMENTO", "cpf": "144.288.538-66", "requerimentos": [{"protocolo": "1289867198", "data": "07/05/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/08/2025 07:23"}, {"protocolo": "1252309755", "data": "13/04/2026", "unidade": "TERESINA - SUL", "ultimaAtualizacao": "13/04/2026 17:53"}]}, {"nome": "MARCIVON SILVA BARBOSA", "cpf": "018.271.803-40", "requerimentos": [{"protocolo": "1727282482", "data": "16/07/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "19/08/2025 09:52"}, {"protocolo": "500766140", "data": "07/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "22/03/2026 02:19"}, {"protocolo": "1901697395", "data": "01/04/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "19/04/2026 03:50"}]}, {"nome": "LUZIA SOUSA DOS SANTOS", "cpf": "000.776.223-24", "requerimentos": [{"protocolo": "402117358", "data": "21/11/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "04/12/2025 02:24"}, {"protocolo": "874187255", "data": "05/12/2025", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "27/01/2026 07:54"}, {"protocolo": "93702430", "data": "04/03/2026", "unidade": "TIMON", "ultimaAtualizacao": "19/03/2026 09:12"}, {"protocolo": "1407025587", "data": "01/04/2026", "unidade": "TIMON", "ultimaAtualizacao": "19/04/2026 03:49"}]}, {"nome": "ANDREIA CLARA DA SILVA", "cpf": "007.923.193-46", "requerimentos": [{"protocolo": "1308600927", "data": "10/12/2025", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "27/01/2026 07:29"}, {"protocolo": "1087701672", "data": "13/03/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "31/03/2026 02:17"}]}, {"nome": "RAIMANDA DA CONCEICAO ALVES", "cpf": "656.305.053-00", "requerimentos": [{"protocolo": "1660019318", "data": "04/09/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "07/09/2025 20:04"}, {"protocolo": "906126464", "data": "28/11/2025", "unidade": "CAXIAS", "ultimaAtualizacao": "17/01/2026 19:24"}, {"protocolo": "2076924822", "data": "05/03/2026", "unidade": "TERESINA - SUL", "ultimaAtualizacao": "07/05/2026 10:17"}]}, {"nome": "MARIA VILMA BARBOSA", "cpf": "361.682.893-72", "requerimentos": [{"protocolo": "2077786222", "data": "12/05/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "19/08/2025 15:44"}, {"protocolo": "844638069", "data": "24/09/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/10/2025 22:53"}, {"protocolo": "1259629061", "data": "05/12/2025", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "11/12/2025 03:18"}, {"protocolo": "918834586", "data": "04/03/2026", "unidade": "TERESINA - SUL", "ultimaAtualizacao": "09/03/2026 03:25"}]}, {"nome": "ALFREDO RAIMUNDO DOS SANTOS", "cpf": "874.961.273-53", "requerimentos": [{"protocolo": "502913413", "data": "21/05/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "27/06/2025 20:04"}, {"protocolo": "1070410930", "data": "05/08/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "28/08/2025 09:51"}, {"protocolo": "1268484802", "data": "27/02/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/04/2026 15:18"}]}, {"nome": "MARIA DO SOCORRO DA SILVA SA", "cpf": "553.186.143-53", "requerimentos": [{"protocolo": "782961631", "data": "10/07/2025", "unidade": "SETOR DE ENGENHARIA DE AVALIAÇÃO", "ultimaAtualizacao": "23/09/2025 19:59"}, {"protocolo": "1066473079", "data": "14/07/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "14/08/2025 23:07"}, {"protocolo": "382271812", "data": "15/09/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "15/11/2025 15:51"}, {"protocolo": "1735954607", "data": "26/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "06/04/2026 02:07"}]}, {"nome": "THAYNA RODRIGUES LOPES", "cpf": "065.528.313-74", "requerimentos": [{"protocolo": "113575026", "data": "23/07/2025", "unidade": "ALTOS", "ultimaAtualizacao": "24/01/2026 04:55"}, {"protocolo": "1618500793", "data": "04/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "02/03/2026 18:07"}]}, {"nome": "EVANILDO DE SOUSA NUNES", "cpf": "768.792.243-34", "requerimentos": [{"protocolo": "2147309333", "data": "01/09/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "05/12/2025 03:49"}, {"protocolo": "1223750720", "data": "16/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "26/02/2026 02:35"}]}, {"nome": "UBIRACI EURIDENE DE VASCONCELOS CASTRO", "cpf": "804.222.093-68", "requerimentos": [{"protocolo": "1579430869", "data": "11/09/2025", "unidade": "TIMON", "ultimaAtualizacao": "11/09/2025 14:53"}, {"protocolo": "595588898", "data": "25/11/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "06/12/2025 18:24"}, {"protocolo": "1179384457", "data": "16/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "03/03/2026 03:22"}]}, {"nome": "GESSIVALDA DO NASCIMENTO SOUSA", "cpf": "014.532.553-97", "requerimentos": [{"protocolo": "382964849", "data": "30/04/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "03/06/2025 12:48"}, {"protocolo": "1328713145", "data": "28/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "02/12/2025 02:38"}, {"protocolo": "842445150", "data": "09/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "06/04/2026 02:23"}]}, {"nome": "LOHOANA MARIA DE J DA S COST", "cpf": "035.527.063-30", "requerimentos": [{"protocolo": "1137315955", "data": "19/12/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "27/01/2026 07:52"}]}, {"nome": "HENRIQUE DOS SANTOS CARDOSO", "cpf": "660.966.183-91", "requerimentos": [{"protocolo": "1578460315", "data": "18/12/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "26/01/2026 12:54"}]}, {"nome": "JOSE SERGIO SOUSA BARROS", "cpf": "016.841.203-90", "requerimentos": [{"protocolo": "1278763283", "data": "02/12/2025", "unidade": "BURITI BRAVO", "ultimaAtualizacao": "11/03/2026 02:31"}]}, {"nome": "VALMIR NORBERTO DE SOUSA", "cpf": "266.877.738-01", "requerimentos": [{"protocolo": "87568317", "data": "01/07/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "01/07/2025 12:23"}, {"protocolo": "1745444334", "data": "11/08/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "13/10/2025 22:47"}, {"protocolo": "1171154341", "data": "28/11/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "18/01/2026 02:49"}]}, {"nome": "WITALO SANTOS LIRA", "cpf": "055.091.693-89", "requerimentos": [{"protocolo": "362060006", "data": "04/11/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "28/02/2026 08:06"}]}, {"nome": "ELIS REGINA SILVA SANTOS", "cpf": "619.701.343-64", "requerimentos": [{"protocolo": "1975462843", "data": "04/11/2025", "unidade": "TIMON", "ultimaAtualizacao": "14/03/2026 03:37"}]}, {"nome": "MARIA DENISE SOUSA DE ANDRADE", "cpf": "076.782.183-11", "requerimentos": [{"protocolo": "1245494340", "data": "07/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "16/12/2025 14:13"}]}, {"nome": "AURENY DA SILVA MOURA DE OLIVEIRA", "cpf": "552.880.653-49", "requerimentos": [{"protocolo": "1279441830", "data": "07/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/12/2025 11:20"}]}, {"nome": "JOSE WILKER DA CRUZ CHAGAS", "cpf": "619.763.173-39", "requerimentos": [{"protocolo": "714696385", "data": "17/09/2025", "unidade": "TIMON", "ultimaAtualizacao": "26/01/2026 16:03"}]}, {"nome": "ICARO DANIEL SOUSA DE ANDRADE", "cpf": "076.781.943-82", "requerimentos": [{"protocolo": "1200947910", "data": "30/01/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/06/2025 06:28"}, {"protocolo": "931979703", "data": "07/08/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/10/2025 22:24"}]}, {"nome": "CLAUDIANA DE SOUSA SARMENTO", "cpf": "055.914.833-05", "requerimentos": [{"protocolo": "1333696258", "data": "01/07/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "10/07/2025 00:47"}]}, {"nome": "RONALD DE OLIVEIRA", "cpf": "072.094.773-14", "requerimentos": [{"protocolo": "1715114855", "data": "29/05/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "22/01/2026 14:45"}]}, {"nome": "ELDA PRUDENCIO DE OLIVEIRA GALVAO", "cpf": "021.019.641-63", "requerimentos": [{"protocolo": "1393151749", "data": "24/04/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "23/06/2025 04:25"}]}, {"nome": "CLAUDIANA DE SOUSA SARNENTO", "cpf": "055.914.833-05", "requerimentos": [{"protocolo": "2002083001", "data": "28/02/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/06/2025 11:07"}]}, {"nome": "SILVIA MARIA LIMA OLIVEIRA", "cpf": "474.261.523-91", "requerimentos": [{"protocolo": "39539482", "data": "12/02/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "26/06/2025 07:18"}]}];
+
+const STATUS_LABELS = {
+  ativo: "Ativo",
+  cessado: "Cessado",
+  negado: "Negado",
+  analise: "Em análise / recurso",
+  naoinformado: "Não informado"
+};
+
+let clientsState = {}; // cpf -> {status, dataCessacao, motivoNegativa, estrategia, observacoes}
+let order = [];
+
+function slug(cpf){ return cpf.replace(/\D/g,''); }
+
+async function loadAll(){
+  const root = document.getElementById('root');
+  for(const c of SEED_CLIENTS){
+    const key = 'bi:' + slug(c.cpf);
+    try{
+      const res = await window.storage.get(key);
+      clientsState[c.cpf] = res ? JSON.parse(res.value) : {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:''};
+    }catch(e){
+      clientsState[c.cpf] = {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:''};
+    }
+  }
+  order = SEED_CLIENTS.map(c => c.cpf);
+  render();
+}
+
+function computeStats(){
+  const counts = {ativo:0, cessado:0, negado:0, analise:0, naoinformado:0};
+  for(const cpf of order){
+    const st = clientsState[cpf]?.status || 'naoinformado';
+    counts[st] = (counts[st]||0) + 1;
+  }
+  return counts;
+}
+
+function renderStats(){
+  const counts = computeStats();
+  const colors = {ativo:'var(--ativo)', cessado:'var(--cessado)', negado:'var(--negado)', analise:'var(--analise)', naoinformado:'var(--naoinformado)'};
+  const statsEl = document.getElementById('stats');
+  statsEl.innerHTML = `
+    <div class="stat"><div class="num">${SEED_CLIENTS.length}</div><div class="lbl">Total de clientes</div></div>
+    ${Object.keys(STATUS_LABELS).map(k => `
+      <div class="stat"><div class="num"><span class="dot" style="background:${colors[k]}"></span>${counts[k]||0}</div><div class="lbl">${STATUS_LABELS[k]}</div></div>
+    `).join('')}
+  `;
+}
+
+function matchesFilters(c){
+  const search = document.getElementById('search').value.trim().toLowerCase();
+  const filterStatus = document.getElementById('filterStatus').value;
+  const st = clientsState[c.cpf]?.status || 'naoinformado';
+  if(filterStatus && st !== filterStatus) return false;
+  if(search){
+    const hay = (c.nome + ' ' + c.cpf).toLowerCase();
+    if(!hay.includes(search)) return false;
+  }
+  return true;
+}
+
+function render(){
+  renderStats();
+  const root = document.getElementById('root');
+  const visible = SEED_CLIENTS.filter(matchesFilters);
+  if(visible.length === 0){
+    root.innerHTML = '<div class="empty">Nenhum cliente encontrado com esses filtros.</div>';
+    return;
+  }
+  root.innerHTML = `<div class="cards">${visible.map(cardHtml).join('')}</div>`;
+
+  visible.forEach(c => {
+    const key = slug(c.cpf);
+    document.getElementById('head-'+key).addEventListener('click', () => {
+      document.getElementById('card-'+key).classList.toggle('open');
+    });
+    document.getElementById('save-'+key).addEventListener('click', () => saveClient(c.cpf));
+  });
+}
+
+function badgeHtml(status){
+  return `<span class="badge badge-${status}">${STATUS_LABELS[status]}</span>`;
+}
+
+function cardHtml(c){
+  const key = slug(c.cpf);
+  const st = clientsState[c.cpf] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:''};
+  const reqs = c.requerimentos.slice().reverse();
+  return `
+  <div class="card" id="card-${key}">
+    <div class="card-head" id="head-${key}">
+      <div class="ch-left">
+        <span class="name">${c.nome}</span>
+        <span class="cpf">${c.cpf}</span>
+        ${badgeHtml(st.status)}
+        <span class="reqcount">${c.requerimentos.length} requerimento${c.requerimentos.length>1?'s':''}</span>
+      </div>
+      <span class="chev">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="hist">
+        <div class="hist-title">Histórico de requerimentos (INSS)</div>
+        <table class="hist-table">
+          ${reqs.map(r => `<tr>
+            <td>${r.protocolo}</td>
+            <td>${r.data}</td>
+            <td>${r.unidade}</td>
+            <td>Últ. atualização: ${r.ultimaAtualizacao}</td>
+          </tr>`).join('')}
+        </table>
+      </div>
+
+      <div class="field-grid">
+        <div>
+          <label>Status atual</label>
+          <select id="status-${key}">
+            ${Object.keys(STATUS_LABELS).map(k => `<option value="${k}" ${st.status===k?'selected':''}>${STATUS_LABELS[k]}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label>Data de cessação (se houver)</label>
+          <input type="text" id="cessacao-${key}" placeholder="DD/MM/AAAA" value="${escapeHtml(st.dataCessacao||'')}">
+        </div>
+        <div class="full">
+          <label>Motivo da(s) negativa(s) anterior(es)</label>
+          <textarea id="motivo-${key}" placeholder="Ex: perícia considerou capacidade laborativa preservada; ausência de qualidade de segurado; documentação médica insuficiente...">${escapeHtml(st.motivoNegativa||'')}</textarea>
+        </div>
+        <div class="full">
+          <label>Estratégia para novo protocolo / recurso</label>
+          <textarea id="estrategia-${key}" placeholder="Ex: reunir novos laudos, juntar exames complementares, protocolar com CID atualizado, ingressar com recurso na junta de recursos...">${escapeHtml(st.estrategia||'')}</textarea>
+        </div>
+        <div class="full">
+          <label>Observações</label>
+          <textarea id="obs-${key}" placeholder="Outras anotações relevantes do caso">${escapeHtml(st.observacoes||'')}</textarea>
+        </div>
+      </div>
+
+      <div class="save-row">
+        <span class="save-msg" id="msg-${key}">Salvo ✓</span>
+        <button class="save" id="save-${key}">Salvar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function saveClient(cpf){
+  const key = slug(cpf);
+  const data = {
+    status: document.getElementById('status-'+key).value,
+    dataCessacao: document.getElementById('cessacao-'+key).value,
+    motivoNegativa: document.getElementById('motivo-'+key).value,
+    estrategia: document.getElementById('estrategia-'+key).value,
+    observacoes: document.getElementById('obs-'+key).value
+  };
+  clientsState[cpf] = data;
+  try{
+    await window.storage.set('bi:' + key, JSON.stringify(data));
+    const msg = document.getElementById('msg-'+key);
+    msg.classList.add('show');
+    setTimeout(()=>msg.classList.remove('show'), 1500);
+    renderStats();
+    const badge = document.querySelector('#head-'+key+' .badge');
+    if(badge){
+      badge.className = 'badge badge-' + data.status;
+      badge.textContent = STATUS_LABELS[data.status];
+    }
+  }catch(e){
+    alert('Erro ao salvar. Tente novamente.');
+  }
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('filterStatus').addEventListener('change', render);
+
+loadAll();
+</script>
+</body>
+</html>
