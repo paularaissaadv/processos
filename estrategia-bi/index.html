@@ -5,19 +5,20 @@
 <title>Estratégia APS — Benefício por Incapacidade</title>
 <style>
   :root{
-    --bg:#0f1419;
-    --panel:#161c24;
-    --panel2:#1d2530;
-    --border:#2a3340;
-    --text:#e8edf3;
-    --muted:#8b97a6;
-    --accent:#3b82f6;
-    --accent2:#60a5fa;
-    --ativo:#22c55e;
-    --cessado:#f59e0b;
-    --negado:#ef4444;
-    --analise:#a78bfa;
-    --naoinformado:#475569;
+    --bg:#ffffff;
+    --panel:#f8fafc;
+    --panel2:#f1f5f9;
+    --border:#e2e8f0;
+    --text:#0f172a;
+    --muted:#64748b;
+    --accent:#2563eb;
+    --accent2:#3b82f6;
+    --ativo:#16a34a;
+    --cessado:#d97706;
+    --negado:#dc2626;
+    --analise:#7c3aed;
+    --judicial:#0891b2;
+    --naoinformado:#64748b;
   }
   *{box-sizing:border-box;}
   body{
@@ -79,6 +80,7 @@
     border:1px solid var(--border);
     border-radius:10px;
     overflow:hidden;
+    box-shadow:0 1px 3px rgba(15,23,42,.06);
   }
   .card-head{
     display:flex;
@@ -99,11 +101,12 @@
     font-weight:600;
     white-space:nowrap;
   }
-  .badge-ativo{background:rgba(34,197,94,.15);color:var(--ativo);border:1px solid rgba(34,197,94,.4);}
-  .badge-cessado{background:rgba(245,158,11,.15);color:var(--cessado);border:1px solid rgba(245,158,11,.4);}
-  .badge-negado{background:rgba(239,68,68,.15);color:var(--negado);border:1px solid rgba(239,68,68,.4);}
-  .badge-analise{background:rgba(167,139,250,.15);color:var(--analise);border:1px solid rgba(167,139,250,.4);}
-  .badge-naoinformado{background:rgba(71,85,105,.2);color:var(--muted);border:1px solid var(--border);}
+  .badge-ativo{background:rgba(22,163,74,.12);color:var(--ativo);border:1px solid rgba(22,163,74,.35);}
+  .badge-cessado{background:rgba(217,119,6,.12);color:var(--cessado);border:1px solid rgba(217,119,6,.35);}
+  .badge-negado{background:rgba(220,38,38,.12);color:var(--negado);border:1px solid rgba(220,38,38,.35);}
+  .badge-analise{background:rgba(124,58,237,.12);color:var(--analise);border:1px solid rgba(124,58,237,.35);}
+  .badge-judicial{background:rgba(8,145,178,.12);color:var(--judicial);border:1px solid rgba(8,145,178,.35);}
+  .badge-naoinformado{background:rgba(100,116,139,.12);color:var(--muted);border:1px solid var(--border);}
   .reqcount{font-size:11px;color:var(--muted);}
   .chev{color:var(--muted);font-size:12px;transition:transform .15s;}
   .card.open .chev{transform:rotate(90deg);}
@@ -170,6 +173,55 @@
   button.save:hover{background:var(--accent2);}
   .empty{color:var(--muted);font-size:13px;padding:20px;text-align:center;}
   .loading{color:var(--muted);font-size:13px;padding:20px;text-align:center;}
+  .hist-table input[type=text]{width:100%;font-size:12px;padding:5px 7px;}
+  .add-req-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:flex-end;}
+  .add-req-row > div{flex:1;min-width:110px;}
+  .add-req-row label{margin-bottom:3px;}
+  button.add-req{
+    background:var(--panel2);
+    color:var(--accent);
+    border:1px solid var(--border);
+    padding:8px 14px;
+    border-radius:6px;
+    font-size:12px;
+    cursor:pointer;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  button.add-req:hover{background:#e8eef7;}
+  button.toggle-add{
+    background:none;
+    border:none;
+    color:var(--accent);
+    font-size:12px;
+    cursor:pointer;
+    font-weight:600;
+    padding:4px 0;
+    margin-top:8px;
+  }
+  button.toggle-add:hover{text-decoration:underline;}
+  .new-client-form{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .new-client-form.open{display:block;}
+  button.new-client-btn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  button.new-client-btn:hover{background:var(--accent2);}
+  .new-client-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .new-client-grid .full{grid-column:1/-1;}
 </style>
 </head>
 <body>
@@ -205,9 +257,39 @@
     <option value="ativo">Ativo</option>
     <option value="cessado">Cessado</option>
     <option value="negado">Negado</option>
-    <option value="analise">Em análise / recurso</option>
+    <option value="analise">Em análise</option>
+    <option value="judicial">Via judicial</option>
     <option value="naoinformado">Não informado</option>
   </select>
+  <button class="new-client-btn" id="btnNovoCliente" type="button">+ Novo requerimento (cliente novo)</button>
+</div>
+
+<div class="new-client-form" id="formNovoCliente">
+  <div class="new-client-grid">
+    <div class="full">
+      <label>Nome completo</label>
+      <input type="text" id="nc-nome" placeholder="Nome do cliente">
+    </div>
+    <div>
+      <label>CPF</label>
+      <input type="text" id="nc-cpf" placeholder="000.000.000-00">
+    </div>
+    <div>
+      <label>Protocolo</label>
+      <input type="text" id="nc-protocolo" placeholder="Número do protocolo">
+    </div>
+    <div>
+      <label>Data de protocolo</label>
+      <input type="date" id="nc-data">
+    </div>
+    <div>
+      <label>Unidade</label>
+      <input type="text" id="nc-unidade" placeholder="Unidade do INSS">
+    </div>
+  </div>
+  <div class="save-row">
+    <button class="save" id="btnSalvarNovoCliente" type="button">Adicionar cliente</button>
+  </div>
 </div>
 
 <div id="root" class="loading">Carregando dados...</div>
@@ -262,38 +344,107 @@ const STATUS_LABELS = {
   ativo: "Ativo",
   cessado: "Cessado",
   negado: "Negado",
-  analise: "Em análise / recurso",
+  analise: "Em análise",
+  judicial: "Via judicial",
   naoinformado: "Não informado"
 };
 
 let clientsState = {};
 let order = [];
+let allClients = [];
+const MANUAL_DOC_ID = "_clientesManuais";
 
 function slug(cpf){ return cpf.replace(/\D/g,''); }
+
+function brToIso(br){
+  if(!br) return '';
+  const m = br.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(!m) return '';
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+function isoToBr(iso){
+  if(!iso) return '';
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return '';
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
 
 window.iniciarApp = async function(){
   const root = document.getElementById('root');
   try{
     const snap = await getDocs(collection(db, COLLECTION));
     const remote = {};
-    snap.forEach(d => { remote[d.id] = d.data(); });
-    for(const c of SEED_CLIENTS){
+    let manualClients = [];
+    snap.forEach(d => {
+      if(d.id === MANUAL_DOC_ID){
+        manualClients = d.data().clientes || [];
+      } else {
+        remote[d.id] = d.data();
+      }
+    });
+    allClients = SEED_CLIENTS.concat(manualClients);
+    for(const c of allClients){
       const key = slug(c.cpf);
-      clientsState[c.cpf] = remote[key] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:''};
+      clientsState[c.cpf] = remote[key] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:'', localPericia:'', resultados:{}, requerimentosExtras:[]};
     }
   }catch(e){
     console.error(e);
     root.innerHTML = '<div class="empty">Erro ao conectar ao Firebase. Verifique as regras do Firestore (collection "estrategiaBI") e tente novamente.</div>';
     return;
   }
-  order = SEED_CLIENTS.map(c => c.cpf);
+  order = allClients.map(c => c.cpf);
   render();
   document.getElementById('search').addEventListener('input', render);
   document.getElementById('filterStatus').addEventListener('change', render);
+  document.getElementById('btnNovoCliente').addEventListener('click', () => {
+    document.getElementById('formNovoCliente').classList.toggle('open');
+  });
+  document.getElementById('btnSalvarNovoCliente').addEventListener('click', addNewClient);
+}
+
+async function addNewClient(){
+  const nome = document.getElementById('nc-nome').value.trim();
+  const cpf = document.getElementById('nc-cpf').value.trim();
+  const protocolo = document.getElementById('nc-protocolo').value.trim();
+  const dataIso = document.getElementById('nc-data').value;
+  const unidade = document.getElementById('nc-unidade').value.trim();
+  if(!nome || !cpf){
+    alert('Informe ao menos nome e CPF do cliente.');
+    return;
+  }
+  const novoReq = {
+    protocolo: protocolo || '(não informado)',
+    data: isoToBr(dataIso) || '(não informado)',
+    unidade: unidade || '(não informado)',
+    ultimaAtualizacao: ''
+  };
+  const novoCliente = { nome, cpf, requerimentos: [novoReq] };
+  try{
+    const snap = await getDocs(collection(db, COLLECTION));
+    let manualClients = [];
+    snap.forEach(d => { if(d.id === MANUAL_DOC_ID) manualClients = d.data().clientes || []; });
+    const existing = manualClients.find(c => slug(c.cpf) === slug(cpf));
+    if(existing){
+      existing.requerimentos.push(novoReq);
+    } else {
+      manualClients.push(novoCliente);
+    }
+    await setDoc(doc(db, COLLECTION, MANUAL_DOC_ID), { clientes: manualClients });
+    document.getElementById('nc-nome').value = '';
+    document.getElementById('nc-cpf').value = '';
+    document.getElementById('nc-protocolo').value = '';
+    document.getElementById('nc-data').value = '';
+    document.getElementById('nc-unidade').value = '';
+    document.getElementById('formNovoCliente').classList.remove('open');
+    await iniciarApp();
+  }catch(e){
+    console.error(e);
+    alert('Erro ao salvar novo cliente no Firebase.');
+  }
 }
 
 function computeStats(){
-  const counts = {ativo:0, cessado:0, negado:0, analise:0, naoinformado:0};
+  const counts = {ativo:0, cessado:0, negado:0, analise:0, judicial:0, naoinformado:0};
   for(const cpf of order){
     const st = clientsState[cpf]?.status || 'naoinformado';
     counts[st] = (counts[st]||0) + 1;
@@ -303,10 +454,10 @@ function computeStats(){
 
 function renderStats(){
   const counts = computeStats();
-  const colors = {ativo:'var(--ativo)', cessado:'var(--cessado)', negado:'var(--negado)', analise:'var(--analise)', naoinformado:'var(--naoinformado)'};
+  const colors = {ativo:'var(--ativo)', cessado:'var(--cessado)', negado:'var(--negado)', analise:'var(--analise)', judicial:'var(--judicial)', naoinformado:'var(--naoinformado)'};
   const statsEl = document.getElementById('stats');
   statsEl.innerHTML = `
-    <div class="stat"><div class="num">${SEED_CLIENTS.length}</div><div class="lbl">Total de clientes</div></div>
+    <div class="stat"><div class="num">${allClients.length}</div><div class="lbl">Total de clientes</div></div>
     ${Object.keys(STATUS_LABELS).map(k => `
       <div class="stat"><div class="num"><span class="dot" style="background:${colors[k]}"></span>${counts[k]||0}</div><div class="lbl">${STATUS_LABELS[k]}</div></div>
     `).join('')}
@@ -328,7 +479,7 @@ function matchesFilters(c){
 function render(){
   renderStats();
   const root = document.getElementById('root');
-  const visible = SEED_CLIENTS.filter(matchesFilters);
+  const visible = allClients.filter(matchesFilters);
   if(visible.length === 0){
     root.innerHTML = '<div class="empty">Nenhum cliente encontrado com esses filtros.</div>';
     return;
@@ -341,6 +492,20 @@ function render(){
       document.getElementById('card-'+key).classList.toggle('open');
     });
     document.getElementById('save-'+key).addEventListener('click', () => saveClient(c.cpf));
+    const toggleBtn = document.getElementById('toggleAddReq-'+key);
+    if(toggleBtn){
+      toggleBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        document.getElementById('addReqForm-'+key).classList.toggle('open');
+      });
+    }
+    const addReqBtn = document.getElementById('addReqBtn-'+key);
+    if(addReqBtn){
+      addReqBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        addRequerimento(c.cpf);
+      });
+    }
   });
 }
 
@@ -354,8 +519,10 @@ function escapeHtml(s){
 
 function cardHtml(c){
   const key = slug(c.cpf);
-  const st = clientsState[c.cpf] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:''};
-  const reqs = c.requerimentos.slice().reverse();
+  const st = clientsState[c.cpf] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:'', localPericia:'', resultados:{}, requerimentosExtras:[]};
+  const resultados = st.resultados || {};
+  const extras = st.requerimentosExtras || [];
+  const reqs = c.requerimentos.concat(extras).slice().reverse();
   return `
   <div class="card" id="card-${key}">
     <div class="card-head" id="head-${key}">
@@ -363,7 +530,7 @@ function cardHtml(c){
         <span class="name">${c.nome}</span>
         <span class="cpf">${c.cpf}</span>
         ${badgeHtml(st.status)}
-        <span class="reqcount">${c.requerimentos.length} requerimento${c.requerimentos.length>1?'s':''}</span>
+        <span class="reqcount">${reqs.length} requerimento${reqs.length>1?'s':''}</span>
       </div>
       <span class="chev">▶</span>
     </div>
@@ -375,9 +542,27 @@ function cardHtml(c){
             <td>${r.protocolo}</td>
             <td>${r.data}</td>
             <td>${r.unidade}</td>
-            <td>Últ. atualização: ${r.ultimaAtualizacao}</td>
+            <td><input type="text" id="res-${key}-${r.protocolo}" placeholder="Resultado (ex: indeferido, concedido, em exigência...)" value="${escapeHtml(resultados[r.protocolo]||'')}"></td>
           </tr>`).join('')}
         </table>
+        <button class="toggle-add" id="toggleAddReq-${key}" type="button">+ Adicionar requerimento manualmente</button>
+        <div class="new-client-form" id="addReqForm-${key}">
+          <div class="add-req-row">
+            <div>
+              <label>Protocolo</label>
+              <input type="text" id="newreq-protocolo-${key}" placeholder="Número do protocolo">
+            </div>
+            <div>
+              <label>Data</label>
+              <input type="date" id="newreq-data-${key}">
+            </div>
+            <div>
+              <label>Unidade</label>
+              <input type="text" id="newreq-unidade-${key}" placeholder="Unidade do INSS">
+            </div>
+            <button class="add-req" id="addReqBtn-${key}" type="button">Adicionar</button>
+          </div>
+        </div>
       </div>
 
       <div class="field-grid">
@@ -389,7 +574,7 @@ function cardHtml(c){
         </div>
         <div>
           <label>Data de cessação (se houver)</label>
-          <input type="text" id="cessacao-${key}" placeholder="DD/MM/AAAA" value="${escapeHtml(st.dataCessacao||'')}">
+          <input type="date" id="cessacao-${key}" value="${brToIso(st.dataCessacao||'')}">
         </div>
         <div>
           <label>Login Meu INSS (CPF/usuário)</label>
@@ -401,6 +586,10 @@ function cardHtml(c){
             <input type="password" id="senhaMeuinss-${key}" placeholder="Senha de acesso ao Meu INSS / gov.br" value="${escapeHtml(st.senhaMeuinss||'')}" style="flex:1;">
             <button type="button" onclick="(function(){const i=document.getElementById('senhaMeuinss-${key}');i.type=i.type==='password'?'text':'password';})()" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0 10px;cursor:pointer;font-size:12px;">👁</button>
           </div>
+        </div>
+        <div class="full">
+          <label>Onde foi realizada a perícia médica</label>
+          <input type="text" id="localPericia-${key}" placeholder="Ex: APS Teresina-Leste, perícia social, telemedicina..." value="${escapeHtml(st.localPericia||'')}">
         </div>
         <div class="full">
           <label>Motivo da(s) negativa(s) anterior(es)</label>
@@ -424,31 +613,73 @@ function cardHtml(c){
   </div>`;
 }
 
-async function saveClient(cpf){
+function addRequerimento(cpf){
   const key = slug(cpf);
+  const protocolo = document.getElementById('newreq-protocolo-'+key).value.trim();
+  const dataIso = document.getElementById('newreq-data-'+key).value;
+  const unidade = document.getElementById('newreq-unidade-'+key).value.trim();
+  if(!protocolo){
+    alert('Informe ao menos o número do protocolo.');
+    return;
+  }
+  const st = clientsState[cpf] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:'', localPericia:'', resultados:{}, requerimentosExtras:[]};
+  st.requerimentosExtras = st.requerimentosExtras || [];
+  st.requerimentosExtras.push({
+    protocolo,
+    data: isoToBr(dataIso) || '(não informado)',
+    unidade: unidade || '(não informado)',
+    ultimaAtualizacao: ''
+  });
+  clientsState[cpf] = st;
+  saveClient(cpf, true);
+}
+
+async function saveClient(cpf, silent){
+  const key = slug(cpf);
+  const c = allClients.find(cl => cl.cpf === cpf);
+  const prev = clientsState[cpf] || {};
+  const resultados = {};
+  if(c){
+    const allReqs = c.requerimentos.concat(prev.requerimentosExtras || []);
+    allReqs.forEach(r => {
+      const el = document.getElementById('res-'+key+'-'+r.protocolo);
+      if(el) resultados[r.protocolo] = el.value;
+    });
+  }
   const data = {
-    nome: SEED_CLIENTS.find(c => c.cpf === cpf)?.nome || '',
+    nome: c?.nome || prev.nome || '',
     cpf: cpf,
-    status: document.getElementById('status-'+key).value,
-    dataCessacao: document.getElementById('cessacao-'+key).value,
-    loginMeuinss: document.getElementById('loginMeuinss-'+key).value,
-    senhaMeuinss: document.getElementById('senhaMeuinss-'+key).value,
-    motivoNegativa: document.getElementById('motivo-'+key).value,
-    estrategia: document.getElementById('estrategia-'+key).value,
-    observacoes: document.getElementById('obs-'+key).value,
+    status: document.getElementById('status-'+key)?.value || prev.status || 'naoinformado',
+    dataCessacao: isoToBr(document.getElementById('cessacao-'+key)?.value || ''),
+    loginMeuinss: document.getElementById('loginMeuinss-'+key)?.value || '',
+    senhaMeuinss: document.getElementById('senhaMeuinss-'+key)?.value || '',
+    localPericia: document.getElementById('localPericia-'+key)?.value || '',
+    motivoNegativa: document.getElementById('motivo-'+key)?.value || '',
+    estrategia: document.getElementById('estrategia-'+key)?.value || '',
+    observacoes: document.getElementById('obs-'+key)?.value || '',
+    resultados: resultados,
+    requerimentosExtras: prev.requerimentosExtras || [],
     atualizadoEm: new Date().toISOString()
   };
   clientsState[cpf] = data;
   try{
     await setDoc(doc(db, COLLECTION, key), data);
-    const msg = document.getElementById('msg-'+key);
-    msg.classList.add('show');
-    setTimeout(()=>msg.classList.remove('show'), 1500);
-    renderStats();
-    const badge = document.querySelector('#head-'+key+' .badge');
-    if(badge){
-      badge.className = 'badge badge-' + data.status;
-      badge.textContent = STATUS_LABELS[data.status];
+    if(!silent){
+      const msg = document.getElementById('msg-'+key);
+      if(msg){
+        msg.classList.add('show');
+        setTimeout(()=>msg.classList.remove('show'), 1500);
+      }
+      renderStats();
+      const badge = document.querySelector('#head-'+key+' .badge');
+      if(badge){
+        badge.className = 'badge badge-' + data.status;
+        badge.textContent = STATUS_LABELS[data.status];
+      }
+    } else {
+      render();
+      const cardEl = document.getElementById('card-'+key);
+      if(cardEl) cardEl.classList.add('open');
     }
   }catch(e){
     console.error(e);
