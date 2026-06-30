@@ -174,6 +174,25 @@
 </head>
 <body>
 
+<!-- TELA DE ACESSO -->
+<div id="tela-acesso" style="position:fixed;inset:0;background:#f1f5f9;z-index:9999;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:40px 36px;max-width:380px;width:90%;box-shadow:0 4px 24px #0000001a;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">⚖️</div>
+    <div style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:4px">Paula Teles Advocacia</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:28px">Estratégia APS · Benefício por Incapacidade</div>
+    <input id="campo-senha" type="password" placeholder="Digite a senha de acesso"
+      style="width:100%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;font-size:14px;outline:none;margin-bottom:12px;box-sizing:border-box;text-align:center"
+      onkeydown="if(event.key==='Enter') verificarSenha()">
+    <div id="erro-senha" style="color:#ef4444;font-size:12px;margin-bottom:10px;display:none">Senha incorreta. Tente novamente.</div>
+    <button onclick="verificarSenha()"
+      style="width:100%;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">
+      Entrar
+    </button>
+    <div style="font-size:11px;color:#94a3b8;margin-top:20px">Acesso restrito · Uso interno</div>
+  </div>
+</div>
+
+<div id="app-content" style="display:none">
 <h1>Estratégia APS — Benefício por Incapacidade</h1>
 <div class="subtitle">Acompanhamento de requerimentos administrativos junto ao INSS — histórico, status, motivos de indeferimento e estratégia de novo protocolo</div>
 
@@ -192,8 +211,51 @@
 </div>
 
 <div id="root" class="loading">Carregando dados...</div>
+</div>
 
 <script>
+  // ══════════════════════════════════
+  // SENHA DE ACESSO — mesma do sistema de processos
+  const SENHA_ACESSO = "124455";
+  // ══════════════════════════════════
+  function verificarSenha() {
+    const campo = document.getElementById('campo-senha');
+    const erro = document.getElementById('erro-senha');
+    if (campo.value === SENHA_ACESSO) {
+      sessionStorage.setItem('acesso_liberado_bi', '1');
+      document.getElementById('tela-acesso').style.display = 'none';
+      document.getElementById('app-content').style.display = 'block';
+      iniciarApp();
+    } else {
+      erro.style.display = 'block';
+      campo.value = '';
+      campo.focus();
+    }
+  }
+  if (sessionStorage.getItem('acesso_liberado_bi') === '1') {
+    document.getElementById('tela-acesso').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+    window.addEventListener('DOMContentLoaded', iniciarApp);
+  }
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBKHbSsHY3jlP10xZJ3qIQsP7KFMkOlFCo",
+  authDomain: "processos-advocacia-8351b.firebaseapp.com",
+  projectId: "processos-advocacia-8351b",
+  storageBucket: "processos-advocacia-8351b.firebasestorage.app",
+  messagingSenderId: "305908663484",
+  appId: "1:305908663484:web:1660f648f88bd2ce9fbcb9"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const COLLECTION = "estrategiaBI";
+
 const SEED_CLIENTS = [{"nome": "CICERO FERREIRA LIMA", "cpf": "473.957.613-91", "requerimentos": [{"protocolo": "1303673926", "data": "21/03/2025", "unidade": "TIMON", "ultimaAtualizacao": "26/06/2025 17:29"}, {"protocolo": "1179058425", "data": "04/09/2025", "unidade": "TIMON", "ultimaAtualizacao": "04/09/2025 11:23"}, {"protocolo": "1118874851", "data": "28/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "02/11/2025 03:11"}, {"protocolo": "1441001799", "data": "02/12/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "14/12/2025 02:11"}, {"protocolo": "726760047", "data": "16/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "24/01/2026 04:39"}, {"protocolo": "904253871", "data": "01/04/2026", "unidade": "TIMON", "ultimaAtualizacao": "14/04/2026 07:56"}, {"protocolo": "391501305", "data": "12/05/2026", "unidade": "TIMON", "ultimaAtualizacao": "27/05/2026 02:15"}]}, {"nome": "MIRIAM OLIVEIRA ALMEIDA ADRIANO", "cpf": "591.517.813-87", "requerimentos": [{"protocolo": "1432818577", "data": "04/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "02/05/2026 15:17"}, {"protocolo": "400031922", "data": "04/05/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "24/05/2026 02:06"}]}, {"nome": "ROSENILDO FALCAO LEAO", "cpf": "001.864.541-04", "requerimentos": [{"protocolo": "511843086", "data": "11/03/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "28/03/2026 14:30"}, {"protocolo": "1848469735", "data": "27/04/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/05/2026 07:53"}]}, {"nome": "NEIDIVAN DOS SANTOS RODRIGUES", "cpf": "462.599.883-20", "requerimentos": [{"protocolo": "1433536672", "data": "08/04/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "09/07/2025 22:18"}, {"protocolo": "1014674370", "data": "07/01/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "07/01/2026 10:53"}, {"protocolo": "1822962107", "data": "22/04/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "08/05/2026 03:09"}]}, {"nome": "MARIA DE LOURDES DO NASCIMENTO SANTOS", "cpf": "871.306.103-87", "requerimentos": [{"protocolo": "5644787", "data": "14/12/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "03/02/2026 18:09"}, {"protocolo": "840649111", "data": "10/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "05/03/2026 02:11"}, {"protocolo": "2043638293", "data": "17/04/2026", "unidade": "TIMON", "ultimaAtualizacao": "03/05/2026 03:07"}]}, {"nome": "KATIA SILENE DOS SANTOS NASCIMENTO", "cpf": "144.288.538-66", "requerimentos": [{"protocolo": "1289867198", "data": "07/05/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/08/2025 07:23"}, {"protocolo": "1252309755", "data": "13/04/2026", "unidade": "TERESINA - SUL", "ultimaAtualizacao": "13/04/2026 17:53"}]}, {"nome": "MARCIVON SILVA BARBOSA", "cpf": "018.271.803-40", "requerimentos": [{"protocolo": "1727282482", "data": "16/07/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "19/08/2025 09:52"}, {"protocolo": "500766140", "data": "07/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "22/03/2026 02:19"}, {"protocolo": "1901697395", "data": "01/04/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "19/04/2026 03:50"}]}, {"nome": "LUZIA SOUSA DOS SANTOS", "cpf": "000.776.223-24", "requerimentos": [{"protocolo": "402117358", "data": "21/11/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "04/12/2025 02:24"}, {"protocolo": "874187255", "data": "05/12/2025", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "27/01/2026 07:54"}, {"protocolo": "93702430", "data": "04/03/2026", "unidade": "TIMON", "ultimaAtualizacao": "19/03/2026 09:12"}, {"protocolo": "1407025587", "data": "01/04/2026", "unidade": "TIMON", "ultimaAtualizacao": "19/04/2026 03:49"}]}, {"nome": "ANDREIA CLARA DA SILVA", "cpf": "007.923.193-46", "requerimentos": [{"protocolo": "1308600927", "data": "10/12/2025", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "27/01/2026 07:29"}, {"protocolo": "1087701672", "data": "13/03/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "31/03/2026 02:17"}]}, {"nome": "RAIMANDA DA CONCEICAO ALVES", "cpf": "656.305.053-00", "requerimentos": [{"protocolo": "1660019318", "data": "04/09/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "07/09/2025 20:04"}, {"protocolo": "906126464", "data": "28/11/2025", "unidade": "CAXIAS", "ultimaAtualizacao": "17/01/2026 19:24"}, {"protocolo": "2076924822", "data": "05/03/2026", "unidade": "TERESINA - SUL", "ultimaAtualizacao": "07/05/2026 10:17"}]}, {"nome": "MARIA VILMA BARBOSA", "cpf": "361.682.893-72", "requerimentos": [{"protocolo": "2077786222", "data": "12/05/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "19/08/2025 15:44"}, {"protocolo": "844638069", "data": "24/09/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/10/2025 22:53"}, {"protocolo": "1259629061", "data": "05/12/2025", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "11/12/2025 03:18"}, {"protocolo": "918834586", "data": "04/03/2026", "unidade": "TERESINA - SUL", "ultimaAtualizacao": "09/03/2026 03:25"}]}, {"nome": "ALFREDO RAIMUNDO DOS SANTOS", "cpf": "874.961.273-53", "requerimentos": [{"protocolo": "502913413", "data": "21/05/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "27/06/2025 20:04"}, {"protocolo": "1070410930", "data": "05/08/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "28/08/2025 09:51"}, {"protocolo": "1268484802", "data": "27/02/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/04/2026 15:18"}]}, {"nome": "MARIA DO SOCORRO DA SILVA SA", "cpf": "553.186.143-53", "requerimentos": [{"protocolo": "782961631", "data": "10/07/2025", "unidade": "SETOR DE ENGENHARIA DE AVALIAÇÃO", "ultimaAtualizacao": "23/09/2025 19:59"}, {"protocolo": "1066473079", "data": "14/07/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "14/08/2025 23:07"}, {"protocolo": "382271812", "data": "15/09/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "15/11/2025 15:51"}, {"protocolo": "1735954607", "data": "26/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "06/04/2026 02:07"}]}, {"nome": "THAYNA RODRIGUES LOPES", "cpf": "065.528.313-74", "requerimentos": [{"protocolo": "113575026", "data": "23/07/2025", "unidade": "ALTOS", "ultimaAtualizacao": "24/01/2026 04:55"}, {"protocolo": "1618500793", "data": "04/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "02/03/2026 18:07"}]}, {"nome": "EVANILDO DE SOUSA NUNES", "cpf": "768.792.243-34", "requerimentos": [{"protocolo": "2147309333", "data": "01/09/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "05/12/2025 03:49"}, {"protocolo": "1223750720", "data": "16/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "26/02/2026 02:35"}]}, {"nome": "UBIRACI EURIDENE DE VASCONCELOS CASTRO", "cpf": "804.222.093-68", "requerimentos": [{"protocolo": "1579430869", "data": "11/09/2025", "unidade": "TIMON", "ultimaAtualizacao": "11/09/2025 14:53"}, {"protocolo": "595588898", "data": "25/11/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "06/12/2025 18:24"}, {"protocolo": "1179384457", "data": "16/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "03/03/2026 03:22"}]}, {"nome": "GESSIVALDA DO NASCIMENTO SOUSA", "cpf": "014.532.553-97", "requerimentos": [{"protocolo": "382964849", "data": "30/04/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "03/06/2025 12:48"}, {"protocolo": "1328713145", "data": "28/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "02/12/2025 02:38"}, {"protocolo": "842445150", "data": "09/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "06/04/2026 02:23"}]}, {"nome": "LOHOANA MARIA DE J DA S COST", "cpf": "035.527.063-30", "requerimentos": [{"protocolo": "1137315955", "data": "19/12/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "27/01/2026 07:52"}]}, {"nome": "HENRIQUE DOS SANTOS CARDOSO", "cpf": "660.966.183-91", "requerimentos": [{"protocolo": "1578460315", "data": "18/12/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "26/01/2026 12:54"}]}, {"nome": "JOSE SERGIO SOUSA BARROS", "cpf": "016.841.203-90", "requerimentos": [{"protocolo": "1278763283", "data": "02/12/2025", "unidade": "BURITI BRAVO", "ultimaAtualizacao": "11/03/2026 02:31"}]}, {"nome": "VALMIR NORBERTO DE SOUSA", "cpf": "266.877.738-01", "requerimentos": [{"protocolo": "87568317", "data": "01/07/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "01/07/2025 12:23"}, {"protocolo": "1745444334", "data": "11/08/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "13/10/2025 22:47"}, {"protocolo": "1171154341", "data": "28/11/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "18/01/2026 02:49"}]}, {"nome": "WITALO SANTOS LIRA", "cpf": "055.091.693-89", "requerimentos": [{"protocolo": "362060006", "data": "04/11/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "28/02/2026 08:06"}]}, {"nome": "ELIS REGINA SILVA SANTOS", "cpf": "619.701.343-64", "requerimentos": [{"protocolo": "1975462843", "data": "04/11/2025", "unidade": "TIMON", "ultimaAtualizacao": "14/03/2026 03:37"}]}, {"nome": "MARIA DENISE SOUSA DE ANDRADE", "cpf": "076.782.183-11", "requerimentos": [{"protocolo": "1245494340", "data": "07/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "16/12/2025 14:13"}]}, {"nome": "AURENY DA SILVA MOURA DE OLIVEIRA", "cpf": "552.880.653-49", "requerimentos": [{"protocolo": "1279441830", "data": "07/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/12/2025 11:20"}]}, {"nome": "JOSE WILKER DA CRUZ CHAGAS", "cpf": "619.763.173-39", "requerimentos": [{"protocolo": "714696385", "data": "17/09/2025", "unidade": "TIMON", "ultimaAtualizacao": "26/01/2026 16:03"}]}, {"nome": "ICARO DANIEL SOUSA DE ANDRADE", "cpf": "076.781.943-82", "requerimentos": [{"protocolo": "1200947910", "data": "30/01/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/06/2025 06:28"}, {"protocolo": "931979703", "data": "07/08/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/10/2025 22:24"}]}, {"nome": "CLAUDIANA DE SOUSA SARMENTO", "cpf": "055.914.833-05", "requerimentos": [{"protocolo": "1333696258", "data": "01/07/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "10/07/2025 00:47"}]}, {"nome": "RONALD DE OLIVEIRA", "cpf": "072.094.773-14", "requerimentos": [{"protocolo": "1715114855", "data": "29/05/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "22/01/2026 14:45"}]}, {"nome": "ELDA PRUDENCIO DE OLIVEIRA GALVAO", "cpf": "021.019.641-63", "requerimentos": [{"protocolo": "1393151749", "data": "24/04/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "23/06/2025 04:25"}]}, {"nome": "CLAUDIANA DE SOUSA SARNENTO", "cpf": "055.914.833-05", "requerimentos": [{"protocolo": "2002083001", "data": "28/02/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/06/2025 11:07"}]}, {"nome": "SILVIA MARIA LIMA OLIVEIRA", "cpf": "474.261.523-91", "requerimentos": [{"protocolo": "39539482", "data": "12/02/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "26/06/2025 07:18"}]}];
 
 const STATUS_LABELS = {
@@ -204,24 +266,30 @@ const STATUS_LABELS = {
   naoinformado: "Não informado"
 };
 
-let clientsState = {}; // cpf -> {status, dataCessacao, motivoNegativa, estrategia, observacoes}
+let clientsState = {};
 let order = [];
 
 function slug(cpf){ return cpf.replace(/\D/g,''); }
 
-async function loadAll(){
+window.iniciarApp = async function(){
   const root = document.getElementById('root');
-  for(const c of SEED_CLIENTS){
-    const key = 'bi:' + slug(c.cpf);
-    try{
-      const res = await window.storage.get(key);
-      clientsState[c.cpf] = res ? JSON.parse(res.value) : {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:''};
-    }catch(e){
-      clientsState[c.cpf] = {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:''};
+  try{
+    const snap = await getDocs(collection(db, COLLECTION));
+    const remote = {};
+    snap.forEach(d => { remote[d.id] = d.data(); });
+    for(const c of SEED_CLIENTS){
+      const key = slug(c.cpf);
+      clientsState[c.cpf] = remote[key] || {status:'naoinformado', dataCessacao:'', motivoNegativa:'', estrategia:'', observacoes:''};
     }
+  }catch(e){
+    console.error(e);
+    root.innerHTML = '<div class="empty">Erro ao conectar ao Firebase. Verifique as regras do Firestore (collection "estrategiaBI") e tente novamente.</div>';
+    return;
   }
   order = SEED_CLIENTS.map(c => c.cpf);
   render();
+  document.getElementById('search').addEventListener('input', render);
+  document.getElementById('filterStatus').addEventListener('change', render);
 }
 
 function computeStats(){
@@ -278,6 +346,10 @@ function render(){
 
 function badgeHtml(status){
   return `<span class="badge badge-${status}">${STATUS_LABELS[status]}</span>`;
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function cardHtml(c){
@@ -341,22 +413,21 @@ function cardHtml(c){
   </div>`;
 }
 
-function escapeHtml(s){
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
 async function saveClient(cpf){
   const key = slug(cpf);
   const data = {
+    nome: SEED_CLIENTS.find(c => c.cpf === cpf)?.nome || '',
+    cpf: cpf,
     status: document.getElementById('status-'+key).value,
     dataCessacao: document.getElementById('cessacao-'+key).value,
     motivoNegativa: document.getElementById('motivo-'+key).value,
     estrategia: document.getElementById('estrategia-'+key).value,
-    observacoes: document.getElementById('obs-'+key).value
+    observacoes: document.getElementById('obs-'+key).value,
+    atualizadoEm: new Date().toISOString()
   };
   clientsState[cpf] = data;
   try{
-    await window.storage.set('bi:' + key, JSON.stringify(data));
+    await setDoc(doc(db, COLLECTION, key), data);
     const msg = document.getElementById('msg-'+key);
     msg.classList.add('show');
     setTimeout(()=>msg.classList.remove('show'), 1500);
@@ -367,14 +438,10 @@ async function saveClient(cpf){
       badge.textContent = STATUS_LABELS[data.status];
     }
   }catch(e){
-    alert('Erro ao salvar. Tente novamente.');
+    console.error(e);
+    alert('Erro ao salvar no Firebase. Verifique sua conexão ou as regras do Firestore.');
   }
 }
-
-document.getElementById('search').addEventListener('input', render);
-document.getElementById('filterStatus').addEventListener('change', render);
-
-loadAll();
 </script>
 </body>
 </html>
