@@ -391,6 +391,17 @@ function cardHtml(c){
           <label>Data de cessação (se houver)</label>
           <input type="text" id="cessacao-${key}" placeholder="DD/MM/AAAA" value="${escapeHtml(st.dataCessacao||'')}">
         </div>
+        <div>
+          <label>Login Meu INSS (CPF/usuário)</label>
+          <input type="text" id="loginMeuinss-${key}" placeholder="CPF ou usuário de acesso" value="${escapeHtml(st.loginMeuinss||'')}">
+        </div>
+        <div>
+          <label>Senha Meu INSS</label>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="senhaMeuinss-${key}" placeholder="Senha de acesso ao Meu INSS / gov.br" value="${escapeHtml(st.senhaMeuinss||'')}" style="flex:1;">
+            <button type="button" onclick="(function(){const i=document.getElementById('senhaMeuinss-${key}');i.type=i.type==='password'?'text':'password';})()" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0 10px;cursor:pointer;font-size:12px;">👁</button>
+          </div>
+        </div>
         <div class="full">
           <label>Motivo da(s) negativa(s) anterior(es)</label>
           <textarea id="motivo-${key}" placeholder="Ex: perícia considerou capacidade laborativa preservada; ausência de qualidade de segurado; documentação médica insuficiente...">${escapeHtml(st.motivoNegativa||'')}</textarea>
@@ -420,6 +431,8 @@ async function saveClient(cpf){
     cpf: cpf,
     status: document.getElementById('status-'+key).value,
     dataCessacao: document.getElementById('cessacao-'+key).value,
+    loginMeuinss: document.getElementById('loginMeuinss-'+key).value,
+    senhaMeuinss: document.getElementById('senhaMeuinss-'+key).value,
     motivoNegativa: document.getElementById('motivo-'+key).value,
     estrategia: document.getElementById('estrategia-'+key).value,
     observacoes: document.getElementById('obs-'+key).value,
