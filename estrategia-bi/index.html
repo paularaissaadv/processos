@@ -18,6 +18,7 @@
     --negado:#dc2626;
     --analise:#7c3aed;
     --judicial:#0891b2;
+    --pericia:#ea580c;
     --naoinformado:#64748b;
   }
   *{box-sizing:border-box;}
@@ -106,7 +107,20 @@
   .badge-negado{background:rgba(220,38,38,.12);color:var(--negado);border:1px solid rgba(220,38,38,.35);}
   .badge-analise{background:rgba(124,58,237,.12);color:var(--analise);border:1px solid rgba(124,58,237,.35);}
   .badge-judicial{background:rgba(8,145,178,.12);color:var(--judicial);border:1px solid rgba(8,145,178,.35);}
+  .badge-pericia{background:rgba(234,88,12,.12);color:var(--pericia);border:1px solid rgba(234,88,12,.35);}
   .badge-naoinformado{background:rgba(100,116,139,.12);color:var(--muted);border:1px solid var(--border);}
+  .btn-danger{
+    background:none;
+    border:1px solid rgba(220,38,38,.35);
+    color:var(--negado);
+    padding:4px 10px;
+    border-radius:6px;
+    font-size:11px;
+    cursor:pointer;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .btn-danger:hover{background:rgba(220,38,38,.08);}
   .reqcount{font-size:11px;color:var(--muted);}
   .chev{color:var(--muted);font-size:12px;transition:transform .15s;}
   .card.open .chev{transform:rotate(90deg);}
@@ -182,6 +196,9 @@
     margin-bottom:8px;
   }
   .req-item-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
     font-size:12px;
     color:var(--accent);
     margin-bottom:8px;
@@ -285,6 +302,7 @@
     <option value="negado">Negado</option>
     <option value="analise">Em análise</option>
     <option value="judicial">Via judicial</option>
+    <option value="pericia">Perícia agendada</option>
     <option value="naoinformado">Não informado</option>
   </select>
   <button class="new-client-btn" id="btnNovoCliente" type="button">+ Novo requerimento (cliente novo)</button>
@@ -372,6 +390,7 @@ const STATUS_LABELS = {
   negado: "Negado",
   analise: "Em análise",
   judicial: "Via judicial",
+  pericia: "Perícia agendada",
   naoinformado: "Não informado"
 };
 
@@ -497,7 +516,7 @@ async function addNewClient(){
 }
 
 function computeStats(){
-  const counts = {ativo:0, cessado:0, negado:0, analise:0, judicial:0, naoinformado:0};
+  const counts = {ativo:0, cessado:0, negado:0, analise:0, judicial:0, pericia:0, naoinformado:0};
   for(const cpf of order){
     const st = clientsState[cpf]?.status || 'naoinformado';
     counts[st] = (counts[st]||0) + 1;
@@ -507,7 +526,7 @@ function computeStats(){
 
 function renderStats(){
   const counts = computeStats();
-  const colors = {ativo:'var(--ativo)', cessado:'var(--cessado)', negado:'var(--negado)', analise:'var(--analise)', judicial:'var(--judicial)', naoinformado:'var(--naoinformado)'};
+  const colors = {ativo:'var(--ativo)', cessado:'var(--cessado)', negado:'var(--negado)', analise:'var(--analise)', judicial:'var(--judicial)', pericia:'var(--pericia)', naoinformado:'var(--naoinformado)'};
   const statsEl = document.getElementById('stats');
   statsEl.innerHTML = `
     <div class="stat"><div class="num">${allClients.length}</div><div class="lbl">Total de clientes</div></div>
@@ -559,6 +578,13 @@ function render(){
         addRequerimento(c.cpf);
       });
     }
+    const delClienteBtn = document.querySelector('#card-'+key+' .btn-del-cliente');
+    if(delClienteBtn){
+      delClienteBtn.addEventListener('click', () => deleteCliente(c.cpf, c.nome));
+    }
+    document.querySelectorAll('#card-'+key+' .btn-del-req').forEach(btn => {
+      btn.addEventListener('click', () => deleteRequerimento(c.cpf, btn.dataset.reqkey));
+    });
   });
 }
 
@@ -586,14 +612,20 @@ function cardHtml(c){
         ${badgeHtml(st.status)}
         <span class="reqcount">${reqs.length} requerimento${reqs.length>1?'s':''}</span>
       </div>
-      <span class="chev">▶</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn-danger btn-del-cliente" data-cpf="${c.cpf}" type="button" onclick="event.stopPropagation()">🗑 Excluir cliente</button>
+        <span class="chev">▶</span>
+      </div>
     </div>
     <div class="card-body">
       <div class="hist">
         <div class="hist-title">Histórico de requerimentos (INSS) — ordem cronológica (mais antigo → mais novo)</div>
         ${reqs.map((r,i) => `
           <div class="req-item" data-reqkey="${r.reqKey}" data-source="${r.source}">
-            <div class="req-item-head">#${i+1}</div>
+            <div class="req-item-head">
+              <span>#${i+1}</span>
+              ${r.source === 'extra' ? `<button class="btn-danger btn-del-req" data-cpf="${c.cpf}" data-reqkey="${r.reqKey}" type="button" onclick="event.stopPropagation()">✕ Excluir</button>` : ''}
+            </div>
             <div class="req-item-fields">
               <div>
                 <label>Protocolo</label>
@@ -680,6 +712,48 @@ function cardHtml(c){
       </div>
     </div>
   </div>`;
+}
+
+async function deleteCliente(cpf, nome){
+  if(!confirm(`Excluir o cliente "${nome}" (${cpf})?\n\nIsso removerá todos os dados salvos desse cliente. Os requerimentos que vieram da planilha original não serão excluídos da base de dados — apenas os dados preenchidos manualmente (estratégia, status, etc.) serão apagados. O cliente voltará a aparecer com status "Não informado".\n\nContinuar?`)) return;
+  const key = slug(cpf);
+  try{
+    const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    await deleteDoc(doc(db, COLLECTION, key));
+    delete clientsState[cpf];
+    // Se for cliente manual, remove também da lista
+    const isSeed = SEED_CLIENTS.some(c => c.cpf === cpf);
+    if(!isSeed){
+      allClients = allClients.filter(c => c.cpf !== cpf);
+      order = order.filter(k => k !== cpf);
+      // Atualiza doc de clientes manuais no Firebase
+      const snap = await getDocs(collection(db, COLLECTION));
+      let manualClients = [];
+      snap.forEach(d => { if(d.id === MANUAL_DOC_ID) manualClients = d.data().clientes || []; });
+      manualClients = manualClients.filter(c => c.cpf !== cpf);
+      await setDoc(doc(db, COLLECTION, MANUAL_DOC_ID), { clientes: manualClients });
+    } else {
+      clientsState[cpf] = {status:'naoinformado', dataCessacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[], reqOverrides:{}};
+    }
+    render();
+  }catch(e){
+    console.error(e);
+    alert('Erro ao excluir no Firebase.');
+  }
+}
+
+async function deleteRequerimento(cpf, reqKey){
+  if(!confirm(`Excluir o requerimento "${reqKey}"?\n\nEssa ação não pode ser desfeita.`)) return;
+  const key = slug(cpf);
+  const st = clientsState[cpf] || {};
+  st.requerimentosExtras = (st.requerimentosExtras || []).filter(r => r.id !== reqKey);
+  // Limpa dados desse req
+  if(st.resultados) delete st.resultados[reqKey];
+  if(st.locaisPericia) delete st.locaisPericia[reqKey];
+  if(st.motivosNegativa) delete st.motivosNegativa[reqKey];
+  if(st.reqOverrides) delete st.reqOverrides[reqKey];
+  clientsState[cpf] = st;
+  saveClient(cpf, true);
 }
 
 function addRequerimento(cpf){
