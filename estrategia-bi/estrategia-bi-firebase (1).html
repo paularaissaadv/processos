@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Estratégia APS — Benefício por Incapacidade</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --panel:#f8fafc;
+    --panel2:#f1f5f9;
+    --border:#e2e8f0;
+    --text:#0f172a;
+    --muted:#64748b;
+    --accent:#2563eb;
+    --accent2:#3b82f6;
+    --ativo:#16a34a;
+    --cessado:#d97706;
+    --negado:#dc2626;
+    --analise:#7c3aed;
+    --judicial:#0891b2;
+    --pericia:#ea580c;
+    --naoinformado:#64748b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:24px;
+  }
+  h1{
+    font-size:20px;
+    margin:0 0 4px 0;
+    font-weight:600;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:20px;
+  }
+  .toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  input[type=text], select{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:8px 10px;
+    border-radius:6px;
+    font-size:13px;
+  }
+  input[type=text]{min-width:220px;}
+  .stats{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .stat{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 14px;
+    min-width:110px;
+  }
+  .stat .num{font-size:20px;font-weight:700;}
+  .stat .lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+  .cards{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 1px 3px rgba(15,23,42,.06);
+  }
+  .card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 16px;
+    cursor:pointer;
+    gap:12px;
+  }
+  .card-head:hover{background:var(--panel2);}
+  .ch-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .name{font-weight:600;font-size:14px;}
+  .cpf{color:var(--muted);font-size:12px;}
+  .badge{
+    font-size:11px;
+    padding:3px 9px;
+    border-radius:20px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .badge-ativo{background:rgba(22,163,74,.12);color:var(--ativo);border:1px solid rgba(22,163,74,.35);}
+  .badge-cessado{background:rgba(217,119,6,.12);color:var(--cessado);border:1px solid rgba(217,119,6,.35);}
+  .badge-negado{background:rgba(220,38,38,.12);color:var(--negado);border:1px solid rgba(220,38,38,.35);}
+  .badge-analise{background:rgba(124,58,237,.12);color:var(--analise);border:1px solid rgba(124,58,237,.35);}
+  .badge-judicial{background:rgba(8,145,178,.12);color:var(--judicial);border:1px solid rgba(8,145,178,.35);}
+  .badge-pericia{background:rgba(234,88,12,.12);color:var(--pericia);border:1px solid rgba(234,88,12,.35);}
+  .badge-naoinformado{background:rgba(100,116,139,.12);color:var(--muted);border:1px solid var(--border);}
+  .prorrogacao-box{
+    background:#fffbeb;
+    border:1px solid #fcd34d;
+    border-radius:8px;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+  .prorrogacao-box label{
+    color:#92400e;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    margin-bottom:0;
+    white-space:nowrap;
+  }
+  .prorrogacao-box input[type=date]{
+    background:#fff;
+    border:1px solid #fcd34d;
+    color:#78350f;
+    padding:7px 10px;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .prorrogacao-box .prorr-aviso{
+    font-size:12px;
+    color:#92400e;
+    font-style:italic;
+  }
+  .prorrogacao-badge{
+    background:#fef3c7;
+    color:#92400e;
+    border:1px solid #fcd34d;
+    border-radius:6px;
+    padding:3px 10px;
+    font-size:11px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .prorrogacao-vazia{
+    background:#f8fafc;
+    color:#94a3b8;
+    border:1px dashed #cbd5e1;
+    font-weight:400;
+  }
+  .prorrogacao-urgente{
+    background:#fef2f2;
+    border-color:#fca5a5;
+    color:#991b1b;
+  }
+  .prorrogacao-urgente label, .prorrogacao-urgente .prorr-aviso{color:#991b1b;}
+  .prorrogacao-urgente input[type=date]{border-color:#fca5a5;color:#991b1b;}
+    background:none;
+    border:1px solid rgba(220,38,38,.35);
+    color:var(--negado);
+    padding:4px 10px;
+    border-radius:6px;
+    font-size:11px;
+    cursor:pointer;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .btn-danger:hover{background:rgba(220,38,38,.08);}
+  .reqcount{font-size:11px;color:var(--muted);}
+  .chev{color:var(--muted);font-size:12px;transition:transform .15s;}
+  .card.open .chev{transform:rotate(90deg);}
+  .card-body{
+    display:none;
+    padding:0 16px 16px 16px;
+    border-top:1px solid var(--border);
+  }
+  .card.open .card-body{display:block;}
+  .hist{
+    margin:14px 0;
+    font-size:12px;
+  }
+  .hist-title{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+  table.hist-table{width:100%;border-collapse:collapse;}
+  table.hist-table td{padding:5px 8px;border-bottom:1px solid var(--border);font-size:12px;}
+  table.hist-table tr:last-child td{border-bottom:none;}
+  .field-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-top:14px;
+  }
+  .field-grid .full{grid-column:1/-1;}
+  label{
+    display:block;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:4px;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+  }
+  textarea, .field-grid select, .field-grid input{
+    width:100%;
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:8px 10px;
+    border-radius:6px;
+    font-size:13px;
+    font-family:inherit;
+    resize:vertical;
+  }
+  textarea{min-height:60px;}
+  .save-row{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+    margin-top:12px;
+  }
+  .save-msg{font-size:12px;color:var(--ativo);opacity:0;transition:opacity .3s;}
+  .save-msg.show{opacity:1;}
+  button.save{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  button.save:hover{background:var(--accent2);}
+  .empty{color:var(--muted);font-size:13px;padding:20px;text-align:center;}
+  .loading{color:var(--muted);font-size:13px;padding:20px;text-align:center;}
+  .hist-table input[type=text]{width:100%;font-size:12px;padding:5px 7px;}
+  .req-item{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  .req-item-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--accent);
+    margin-bottom:8px;
+    font-weight:700;
+  }
+  .req-item-fields{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+  }
+  .req-item-fields .full{grid-column:1/-1;}
+  .req-item-fields label{
+    font-size:10px;
+    margin-bottom:3px;
+  }
+  .req-item-fields input[type=text]{
+    background:#fff;
+  }
+  .add-req-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:flex-end;}
+  .add-req-row > div{flex:1;min-width:110px;}
+  .add-req-row label{margin-bottom:3px;}
+  button.add-req{
+    background:var(--panel2);
+    color:var(--accent);
+    border:1px solid var(--border);
+    padding:8px 14px;
+    border-radius:6px;
+    font-size:12px;
+    cursor:pointer;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  button.add-req:hover{background:#e8eef7;}
+  button.toggle-add{
+    background:none;
+    border:none;
+    color:var(--accent);
+    font-size:12px;
+    cursor:pointer;
+    font-weight:600;
+    padding:4px 0;
+    margin-top:8px;
+  }
+  button.toggle-add:hover{text-decoration:underline;}
+  .new-client-form{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .new-client-form.open{display:block;}
+  button.new-client-btn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  button.new-client-btn:hover{background:var(--accent2);}
+  .new-client-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .new-client-grid .full{grid-column:1/-1;}
+</style>
+</head>
+<body>
+
+<!-- TELA DE ACESSO -->
+<div id="tela-acesso" style="position:fixed;inset:0;background:#f1f5f9;z-index:9999;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:40px 36px;max-width:380px;width:90%;box-shadow:0 4px 24px #0000001a;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">⚖️</div>
+    <div style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:4px">Paula Teles Advocacia</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:28px">Estratégia APS · Benefício por Incapacidade</div>
+    <input id="campo-senha" type="password" placeholder="Digite a senha de acesso"
+      style="width:100%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;font-size:14px;outline:none;margin-bottom:12px;box-sizing:border-box;text-align:center"
+      onkeydown="if(event.key==='Enter') verificarSenha()">
+    <div id="erro-senha" style="color:#ef4444;font-size:12px;margin-bottom:10px;display:none">Senha incorreta. Tente novamente.</div>
+    <button onclick="verificarSenha()"
+      style="width:100%;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer">
+      Entrar
+    </button>
+    <div style="font-size:11px;color:#94a3b8;margin-top:20px">Acesso restrito · Uso interno</div>
+  </div>
+</div>
+
+<div id="app-content" style="display:none">
+<h1>Estratégia APS — Benefício por Incapacidade</h1>
+<div class="subtitle">Acompanhamento de requerimentos administrativos junto ao INSS — histórico, status, motivos de indeferimento e estratégia de novo protocolo</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Buscar por nome ou CPF...">
+  <select id="filterStatus">
+    <option value="">Todos os status</option>
+    <option value="ativo">Ativo</option>
+    <option value="cessado">Cessado</option>
+    <option value="negado">Negado</option>
+    <option value="analise">Em análise</option>
+    <option value="judicial">Via judicial</option>
+    <option value="pericia">Perícia agendada</option>
+    <option value="naoinformado">Não informado</option>
+  </select>
+  <button class="new-client-btn" id="btnNovoCliente" type="button">+ Novo requerimento (cliente novo)</button>
+</div>
+
+<div class="new-client-form" id="formNovoCliente">
+  <div class="new-client-grid">
+    <div class="full">
+      <label>Nome completo</label>
+      <input type="text" id="nc-nome" placeholder="Nome do cliente">
+    </div>
+    <div>
+      <label>CPF</label>
+      <input type="text" id="nc-cpf" placeholder="000.000.000-00">
+    </div>
+    <div>
+      <label>Protocolo</label>
+      <input type="text" id="nc-protocolo" placeholder="Número do protocolo">
+    </div>
+    <div>
+      <label>Data de protocolo</label>
+      <input type="date" id="nc-data">
+    </div>
+    <div>
+      <label>Unidade</label>
+      <input type="text" id="nc-unidade" placeholder="Unidade do INSS">
+    </div>
+  </div>
+  <div class="save-row">
+    <button class="save" id="btnSalvarNovoCliente" type="button">Adicionar cliente</button>
+  </div>
+</div>
+
+<div id="root" class="loading">Carregando dados...</div>
+</div>
+
+<script>
+  // ══════════════════════════════════
+  // SENHA DE ACESSO — mesma do sistema de processos
+  const SENHA_ACESSO = "124455";
+  // ══════════════════════════════════
+  function verificarSenha() {
+    const campo = document.getElementById('campo-senha');
+    const erro = document.getElementById('erro-senha');
+    if (campo.value === SENHA_ACESSO) {
+      sessionStorage.setItem('acesso_liberado_bi', '1');
+      document.getElementById('tela-acesso').style.display = 'none';
+      document.getElementById('app-content').style.display = 'block';
+      iniciarApp();
+    } else {
+      erro.style.display = 'block';
+      campo.value = '';
+      campo.focus();
+    }
+  }
+  if (sessionStorage.getItem('acesso_liberado_bi') === '1') {
+    document.getElementById('tela-acesso').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+    window.addEventListener('DOMContentLoaded', iniciarApp);
+  }
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBKHbSsHY3jlP10xZJ3qIQsP7KFMkOlFCo",
+  authDomain: "processos-advocacia-8351b.firebaseapp.com",
+  projectId: "processos-advocacia-8351b",
+  storageBucket: "processos-advocacia-8351b.firebasestorage.app",
+  messagingSenderId: "305908663484",
+  appId: "1:305908663484:web:1660f648f88bd2ce9fbcb9"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const COLLECTION = "estrategiaBI";
+
+const SEED_CLIENTS = [{"nome": "CICERO FERREIRA LIMA", "cpf": "473.957.613-91", "requerimentos": [{"protocolo": "1303673926", "data": "21/03/2025", "unidade": "TIMON", "ultimaAtualizacao": "26/06/2025 17:29"}, {"protocolo": "1179058425", "data": "04/09/2025", "unidade": "TIMON", "ultimaAtualizacao": "04/09/2025 11:23"}, {"protocolo": "1118874851", "data": "28/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "02/11/2025 03:11"}, {"protocolo": "1441001799", "data": "02/12/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "14/12/2025 02:11"}, {"protocolo": "726760047", "data": "16/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "24/01/2026 04:39"}, {"protocolo": "904253871", "data": "01/04/2026", "unidade": "TIMON", "ultimaAtualizacao": "14/04/2026 07:56"}, {"protocolo": "391501305", "data": "12/05/2026", "unidade": "TIMON", "ultimaAtualizacao": "27/05/2026 02:15"}]}, {"nome": "MIRIAM OLIVEIRA ALMEIDA ADRIANO", "cpf": "591.517.813-87", "requerimentos": [{"protocolo": "1432818577", "data": "04/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "02/05/2026 15:17"}, {"protocolo": "400031922", "data": "04/05/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "24/05/2026 02:06"}]}, {"nome": "ROSENILDO FALCAO LEAO", "cpf": "001.864.541-04", "requerimentos": [{"protocolo": "511843086", "data": "11/03/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "28/03/2026 14:30"}, {"protocolo": "1848469735", "data": "27/04/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/05/2026 07:53"}]}, {"nome": "NEIDIVAN DOS SANTOS RODRIGUES", "cpf": "462.599.883-20", "requerimentos": [{"protocolo": "1433536672", "data": "08/04/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "09/07/2025 22:18"}, {"protocolo": "1014674370", "data": "07/01/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "07/01/2026 10:53"}, {"protocolo": "1822962107", "data": "22/04/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "08/05/2026 03:09"}]}, {"nome": "MARIA DE LOURDES DO NASCIMENTO SANTOS", "cpf": "871.306.103-87", "requerimentos": [{"protocolo": "5644787", "data": "14/12/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "03/02/2026 18:09"}, {"protocolo": "840649111", "data": "10/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "05/03/2026 02:11"}, {"protocolo": "2043638293", "data": "17/04/2026", "unidade": "TIMON", "ultimaAtualizacao": "03/05/2026 03:07"}]}, {"nome": "KATIA SILENE DOS SANTOS NASCIMENTO", "cpf": "144.288.538-66", "requerimentos": [{"protocolo": "1289867198", "data": "07/05/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/08/2025 07:23"}, {"protocolo": "1252309755", "data": "13/04/2026", "unidade": "TERESINA - SUL", "ultimaAtualizacao": "13/04/2026 17:53"}]}, {"nome": "MARCIVON SILVA BARBOSA", "cpf": "018.271.803-40", "requerimentos": [{"protocolo": "1727282482", "data": "16/07/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "19/08/2025 09:52"}, {"protocolo": "500766140", "data": "07/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "22/03/2026 02:19"}, {"protocolo": "1901697395", "data": "01/04/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "19/04/2026 03:50"}]}, {"nome": "LUZIA SOUSA DOS SANTOS", "cpf": "000.776.223-24", "requerimentos": [{"protocolo": "402117358", "data": "21/11/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "04/12/2025 02:24"}, {"protocolo": "874187255", "data": "05/12/2025", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "27/01/2026 07:54"}, {"protocolo": "93702430", "data": "04/03/2026", "unidade": "TIMON", "ultimaAtualizacao": "19/03/2026 09:12"}, {"protocolo": "1407025587", "data": "01/04/2026", "unidade": "TIMON", "ultimaAtualizacao": "19/04/2026 03:49"}]}, {"nome": "ANDREIA CLARA DA SILVA", "cpf": "007.923.193-46", "requerimentos": [{"protocolo": "1308600927", "data": "10/12/2025", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "27/01/2026 07:29"}, {"protocolo": "1087701672", "data": "13/03/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "31/03/2026 02:17"}]}, {"nome": "RAIMANDA DA CONCEICAO ALVES", "cpf": "656.305.053-00", "requerimentos": [{"protocolo": "1660019318", "data": "04/09/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "07/09/2025 20:04"}, {"protocolo": "906126464", "data": "28/11/2025", "unidade": "CAXIAS", "ultimaAtualizacao": "17/01/2026 19:24"}, {"protocolo": "2076924822", "data": "05/03/2026", "unidade": "TERESINA - SUL", "ultimaAtualizacao": "07/05/2026 10:17"}]}, {"nome": "MARIA VILMA BARBOSA", "cpf": "361.682.893-72", "requerimentos": [{"protocolo": "2077786222", "data": "12/05/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "19/08/2025 15:44"}, {"protocolo": "844638069", "data": "24/09/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "12/10/2025 22:53"}, {"protocolo": "1259629061", "data": "05/12/2025", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "11/12/2025 03:18"}, {"protocolo": "918834586", "data": "04/03/2026", "unidade": "TERESINA - SUL", "ultimaAtualizacao": "09/03/2026 03:25"}]}, {"nome": "ALFREDO RAIMUNDO DOS SANTOS", "cpf": "874.961.273-53", "requerimentos": [{"protocolo": "502913413", "data": "21/05/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "27/06/2025 20:04"}, {"protocolo": "1070410930", "data": "05/08/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "28/08/2025 09:51"}, {"protocolo": "1268484802", "data": "27/02/2026", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "13/04/2026 15:18"}]}, {"nome": "MARIA DO SOCORRO DA SILVA SA", "cpf": "553.186.143-53", "requerimentos": [{"protocolo": "782961631", "data": "10/07/2025", "unidade": "SETOR DE ENGENHARIA DE AVALIAÇÃO", "ultimaAtualizacao": "23/09/2025 19:59"}, {"protocolo": "1066473079", "data": "14/07/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "14/08/2025 23:07"}, {"protocolo": "382271812", "data": "15/09/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "15/11/2025 15:51"}, {"protocolo": "1735954607", "data": "26/02/2026", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "06/04/2026 02:07"}]}, {"nome": "EVANILDO DE SOUSA NUNES", "cpf": "768.792.243-34", "requerimentos": [{"protocolo": "2147309333", "data": "01/09/2025", "unidade": "TERESINA - AEROPORTO", "ultimaAtualizacao": "05/12/2025 03:49"}, {"protocolo": "1223750720", "data": "16/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "26/02/2026 02:35"}]}, {"nome": "UBIRACI EURIDENE DE VASCONCELOS CASTRO", "cpf": "804.222.093-68", "requerimentos": [{"protocolo": "1579430869", "data": "11/09/2025", "unidade": "TIMON", "ultimaAtualizacao": "11/09/2025 14:53"}, {"protocolo": "595588898", "data": "25/11/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "06/12/2025 18:24"}, {"protocolo": "1179384457", "data": "16/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "03/03/2026 03:22"}]}, {"nome": "GESSIVALDA DO NASCIMENTO SOUSA", "cpf": "014.532.553-97", "requerimentos": [{"protocolo": "382964849", "data": "30/04/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "03/06/2025 12:48"}, {"protocolo": "1328713145", "data": "28/10/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "02/12/2025 02:38"}, {"protocolo": "842445150", "data": "09/01/2026", "unidade": "TERESINA - CENTRO", "ultimaAtualizacao": "06/04/2026 02:23"}]}, {"nome": "HENRIQUE DOS SANTOS CARDOSO", "cpf": "660.966.183-91", "requerimentos": [{"protocolo": "1578460315", "data": "18/12/2025", "unidade": "TERESINA - LESTE", "ultimaAtualizacao": "26/01/2026 12:54"}]}, {"nome": "JOSE SERGIO SOUSA BARROS", "cpf": "016.841.203-90", "requerimentos": [{"protocolo": "1278763283", "data": "02/12/2025", "unidade": "BURITI BRAVO", "ultimaAtualizacao": "11/03/2026 02:31"}]}, {"nome": "VALMIR NORBERTO DE SOUSA", "cpf": "266.877.738-01", "requerimentos": [{"protocolo": "87568317", "data": "01/07/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "01/07/2025 12:23"}, {"protocolo": "1745444334", "data": "11/08/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "13/10/2025 22:47"}, {"protocolo": "1171154341", "data": "28/11/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "18/01/2026 02:49"}]}, {"nome": "JOSE WILKER DA CRUZ CHAGAS", "cpf": "619.763.173-39", "requerimentos": [{"protocolo": "714696385", "data": "17/09/2025", "unidade": "TIMON", "ultimaAtualizacao": "26/01/2026 16:03"}]}, {"nome": "ELDA PRUDENCIO DE OLIVEIRA GALVAO", "cpf": "021.019.641-63", "requerimentos": [{"protocolo": "1393151749", "data": "24/04/2025", "unidade": "CRISTINO CASTRO", "ultimaAtualizacao": "23/06/2025 04:25"}]}];
+
+const STATUS_LABELS = {
+  ativo: "Ativo",
+  cessado: "Cessado",
+  negado: "Negado",
+  analise: "Em análise",
+  judicial: "Via judicial",
+  pericia: "Perícia agendada",
+  naoinformado: "Não informado"
+};
+
+let clientsState = {};
+let order = [];
+let allClients = [];
+const MANUAL_DOC_ID = "_clientesManuais";
+
+function slug(cpf){ return cpf.replace(/\D/g,''); }
+
+function brToIso(br){
+  if(!br) return '';
+  const m = br.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(!m) return '';
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+function isoToBr(iso){
+  if(!iso) return '';
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return '';
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+function parseBrDate(br){
+  if(!br) return 0;
+  const m = br.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(!m) return 0;
+  return new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime();
+}
+function buildReqList(c, st){
+  const overrides = st.reqOverrides || {};
+  const seedList = c.requerimentos.map(r => {
+    const ov = overrides[r.protocolo];
+    return {
+      reqKey: r.protocolo,
+      source: 'seed',
+      protocolo: ov?.protocolo ?? r.protocolo,
+      data: ov?.data ?? r.data,
+      unidade: ov?.unidade ?? r.unidade
+    };
+  });
+  const extraList = (st.requerimentosExtras || []).map(r => ({
+    reqKey: r.id,
+    source: 'extra',
+    protocolo: r.protocolo,
+    data: r.data,
+    unidade: r.unidade
+  }));
+  return seedList.concat(extraList).sort((a,b) => parseBrDate(a.data) - parseBrDate(b.data));
+}
+
+window.iniciarApp = async function(){
+  const root = document.getElementById('root');
+  try{
+    const snap = await getDocs(collection(db, COLLECTION));
+    const remote = {};
+    let manualClients = [];
+    snap.forEach(d => {
+      if(d.id === MANUAL_DOC_ID){
+        manualClients = d.data().clientes || [];
+      } else {
+        remote[d.id] = d.data();
+      }
+    });
+    allClients = SEED_CLIENTS.concat(manualClients);
+    for(const c of allClients){
+      const key = slug(c.cpf);
+      clientsState[c.cpf] = remote[key] || {status:'naoinformado', dataCessacao:'', dataProrrogacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[], reqOverrides:{}};
+    }
+  }catch(e){
+    console.error(e);
+    root.innerHTML = '<div class="empty">Erro ao conectar ao Firebase. Verifique as regras do Firestore (collection "estrategiaBI") e tente novamente.</div>';
+    return;
+  }
+  order = allClients.map(c => c.cpf);
+  render();
+  document.getElementById('search').addEventListener('input', render);
+  document.getElementById('filterStatus').addEventListener('change', render);
+  document.getElementById('btnNovoCliente').addEventListener('click', () => {
+    document.getElementById('formNovoCliente').classList.toggle('open');
+  });
+  document.getElementById('btnSalvarNovoCliente').addEventListener('click', addNewClient);
+}
+
+async function addNewClient(){
+  const nome = document.getElementById('nc-nome').value.trim();
+  const cpf = document.getElementById('nc-cpf').value.trim();
+  const protocolo = document.getElementById('nc-protocolo').value.trim();
+  const dataIso = document.getElementById('nc-data').value;
+  const unidade = document.getElementById('nc-unidade').value.trim();
+  if(!nome || !cpf){
+    alert('Informe ao menos nome e CPF do cliente.');
+    return;
+  }
+  const novoReq = {
+    protocolo: protocolo || '(não informado)',
+    data: isoToBr(dataIso) || '(não informado)',
+    unidade: unidade || '(não informado)',
+    ultimaAtualizacao: ''
+  };
+  const novoCliente = { nome, cpf, requerimentos: [novoReq] };
+  try{
+    const snap = await getDocs(collection(db, COLLECTION));
+    let manualClients = [];
+    snap.forEach(d => { if(d.id === MANUAL_DOC_ID) manualClients = d.data().clientes || []; });
+    const existing = manualClients.find(c => slug(c.cpf) === slug(cpf));
+    if(existing){
+      existing.requerimentos.push(novoReq);
+    } else {
+      manualClients.push(novoCliente);
+    }
+    await setDoc(doc(db, COLLECTION, MANUAL_DOC_ID), { clientes: manualClients });
+    document.getElementById('nc-nome').value = '';
+    document.getElementById('nc-cpf').value = '';
+    document.getElementById('nc-protocolo').value = '';
+    document.getElementById('nc-data').value = '';
+    document.getElementById('nc-unidade').value = '';
+    document.getElementById('formNovoCliente').classList.remove('open');
+    await iniciarApp();
+  }catch(e){
+    console.error(e);
+    alert('Erro ao salvar novo cliente no Firebase.');
+  }
+}
+
+function computeStats(){
+  const counts = {ativo:0, cessado:0, negado:0, analise:0, judicial:0, pericia:0, naoinformado:0};
+  for(const cpf of order){
+    const st = clientsState[cpf]?.status || 'naoinformado';
+    counts[st] = (counts[st]||0) + 1;
+  }
+  return counts;
+}
+
+function renderStats(){
+  const counts = computeStats();
+  const colors = {ativo:'var(--ativo)', cessado:'var(--cessado)', negado:'var(--negado)', analise:'var(--analise)', judicial:'var(--judicial)', pericia:'var(--pericia)', naoinformado:'var(--naoinformado)'};
+  const statsEl = document.getElementById('stats');
+  statsEl.innerHTML = `
+    <div class="stat"><div class="num">${allClients.length}</div><div class="lbl">Total de clientes</div></div>
+    ${Object.keys(STATUS_LABELS).map(k => `
+      <div class="stat"><div class="num"><span class="dot" style="background:${colors[k]}"></span>${counts[k]||0}</div><div class="lbl">${STATUS_LABELS[k]}</div></div>
+    `).join('')}
+  `;
+}
+
+function matchesFilters(c){
+  const search = document.getElementById('search').value.trim().toLowerCase();
+  const filterStatus = document.getElementById('filterStatus').value;
+  const st = clientsState[c.cpf]?.status || 'naoinformado';
+  if(filterStatus && st !== filterStatus) return false;
+  if(search){
+    const hay = (c.nome + ' ' + c.cpf).toLowerCase();
+    if(!hay.includes(search)) return false;
+  }
+  return true;
+}
+
+function render(){
+  renderStats();
+  const root = document.getElementById('root');
+  const visible = allClients.filter(matchesFilters);
+  if(visible.length === 0){
+    root.innerHTML = '<div class="empty">Nenhum cliente encontrado com esses filtros.</div>';
+    return;
+  }
+  root.innerHTML = `<div class="cards">${visible.map(cardHtml).join('')}</div>`;
+
+  visible.forEach(c => {
+    const key = slug(c.cpf);
+    document.getElementById('head-'+key).addEventListener('click', () => {
+      document.getElementById('card-'+key).classList.toggle('open');
+    });
+    document.getElementById('save-'+key).addEventListener('click', () => saveClient(c.cpf));
+    const toggleBtn = document.getElementById('toggleAddReq-'+key);
+    if(toggleBtn){
+      toggleBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        document.getElementById('addReqForm-'+key).classList.toggle('open');
+      });
+    }
+    const addReqBtn = document.getElementById('addReqBtn-'+key);
+    if(addReqBtn){
+      addReqBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        addRequerimento(c.cpf);
+      });
+    }
+    const delClienteBtn = document.querySelector('#card-'+key+' .btn-del-cliente');
+    if(delClienteBtn){
+      delClienteBtn.addEventListener('click', () => deleteCliente(c.cpf, c.nome));
+    }
+    document.querySelectorAll('#card-'+key+' .btn-del-req').forEach(btn => {
+      btn.addEventListener('click', () => deleteRequerimento(c.cpf, btn.dataset.reqkey));
+    });
+  });
+}
+
+function badgeHtml(status){
+  return `<span class="badge badge-${status}">${STATUS_LABELS[status]}</span>`;
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function isProrrogacaoUrgente(br){
+  if(!br) return false;
+  const ts = parseBrDate(br);
+  const hoje = Date.now();
+  const dias = (ts - hoje) / (1000*60*60*24);
+  return dias >= 0 && dias <= 10;
+}
+function getProrrogacaoClass(br){
+  if(!br) return 'prorrogacao-box';
+  return isProrrogacaoUrgente(br) ? 'prorrogacao-box prorrogacao-urgente' : 'prorrogacao-box';
+}
+function getProrrogacaoAviso(br){
+  if(!br) return 'Nenhuma data definida';
+  const ts = parseBrDate(br);
+  const hoje = Date.now();
+  const dias = Math.round((ts - hoje) / (1000*60*60*24));
+  if(dias < 0) return `⚠️ Prazo vencido há ${Math.abs(dias)} dias`;
+  if(dias === 0) return '🚨 Protocolar HOJE';
+  if(dias <= 10) return `🚨 Urgente — faltam ${dias} dia${dias>1?'s':''}`;
+  return `Faltam ${dias} dias`;
+}
+
+function cardHtml(c){
+  const key = slug(c.cpf);
+  const st = clientsState[c.cpf] || {status:'naoinformado', dataCessacao:'', dataProrrogacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[], reqOverrides:{}};
+  const resultados = st.resultados || {};
+  const locaisPericia = st.locaisPericia || {};
+  const motivosNegativa = st.motivosNegativa || {};
+  const reqs = buildReqList(c, st);
+  return `
+  <div class="card" id="card-${key}">
+    <div class="card-head" id="head-${key}">
+      <div class="ch-left">
+        <span class="name">${c.nome}</span>
+        <span class="cpf">${c.cpf}</span>
+        ${badgeHtml(st.status)}
+        <span class="prorrogacao-badge ${st.dataProrrogacao ? (isProrrogacaoUrgente(st.dataProrrogacao) ? 'prorrogacao-urgente' : '') : 'prorrogacao-vazia'}">
+          📅 Prorrogação: ${st.dataProrrogacao ? `${st.dataProrrogacao} · ${getProrrogacaoAviso(st.dataProrrogacao)}` : 'não definida'}
+        </span>
+        <span class="reqcount">${reqs.length} requerimento${reqs.length>1?'s':''}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn-danger btn-del-cliente" type="button" onclick="event.stopPropagation(); window.deleteCliente('${c.cpf}', '${c.nome.replace(/'/g, "\\'")}')">🗑 Excluir cliente</button>
+        <span class="chev">▶</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="hist">
+        <div class="hist-title">Histórico de requerimentos (INSS) — ordem cronológica (mais antigo → mais novo)</div>
+        ${reqs.map((r,i) => `
+          <div class="req-item" data-reqkey="${r.reqKey}" data-source="${r.source}">
+            <div class="req-item-head">
+              <span>#${i+1}</span>
+              ${r.source === 'extra' ? `<button class="btn-danger btn-del-req" type="button" onclick="event.stopPropagation(); window.deleteRequerimento('${c.cpf}', '${r.reqKey}')">✕ Excluir</button>` : ''}
+            </div>
+            <div class="req-item-fields">
+              <div>
+                <label>Protocolo</label>
+                <input type="text" id="reqprotocolo-${key}-${r.reqKey}" value="${escapeHtml(r.protocolo)}">
+              </div>
+              <div>
+                <label>Data de entrada</label>
+                <input type="date" id="reqdata-${key}-${r.reqKey}" value="${brToIso(r.data)}">
+              </div>
+              <div>
+                <label>Unidade</label>
+                <input type="text" id="requnidade-${key}-${r.reqKey}" value="${escapeHtml(r.unidade)}">
+              </div>
+              <div class="full">
+                <label>Resultado</label>
+                <input type="text" id="res-${key}-${r.reqKey}" placeholder="Ex: indeferido, concedido, em exigência..." value="${escapeHtml(resultados[r.reqKey]||'')}">
+              </div>
+              <div>
+                <label>Onde foi realizada a perícia médica</label>
+                <input type="text" id="pericia-${key}-${r.reqKey}" placeholder="Ex: APS Teresina-Leste, perícia social, telemedicina..." value="${escapeHtml(locaisPericia[r.reqKey]||'')}">
+              </div>
+              <div>
+                <label>Motivo da negativa/concessão</label>
+                <input type="text" id="motivo-${key}-${r.reqKey}" placeholder="Ex: capacidade laborativa preservada, falta de qualidade de segurado, laudo favorável..." value="${escapeHtml(motivosNegativa[r.reqKey]||'')}">
+              </div>
+            </div>
+          </div>
+        `).join('')}
+        <button class="toggle-add" id="toggleAddReq-${key}" type="button">+ Adicionar requerimento manualmente</button>
+        <div class="new-client-form" id="addReqForm-${key}">
+          <div class="add-req-row">
+            <div>
+              <label>Protocolo</label>
+              <input type="text" id="newreq-protocolo-${key}" placeholder="Número do protocolo">
+            </div>
+            <div>
+              <label>Data</label>
+              <input type="date" id="newreq-data-${key}">
+            </div>
+            <div>
+              <label>Unidade</label>
+              <input type="text" id="newreq-unidade-${key}" placeholder="Unidade do INSS">
+            </div>
+            <button class="add-req" id="addReqBtn-${key}" type="button">Adicionar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="${getProrrogacaoClass(st.dataProrrogacao)}" id="prorrogacao-box-${key}">
+        <span>📋</span>
+        <div>
+          <label>Data para pedir prorrogação do benefício</label>
+          <div style="font-size:10px;color:#92400e;margin-top:2px;">Data em que deve ser protocolado o pedido de prorrogação</div>
+        </div>
+        <input type="date" id="prorrogacao-${key}" value="${brToIso(st.dataProrrogacao||'')}">
+        <span class="prorr-aviso" id="prorr-aviso-${key}">${getProrrogacaoAviso(st.dataProrrogacao)}</span>
+      </div>
+
+      <div class="field-grid">
+        <div>
+          <label>Status atual</label>
+          <select id="status-${key}">
+            ${Object.keys(STATUS_LABELS).map(k => `<option value="${k}" ${st.status===k?'selected':''}>${STATUS_LABELS[k]}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label>Data de cessação (se houver)</label>
+          <input type="date" id="cessacao-${key}" value="${brToIso(st.dataCessacao||'')}">
+        </div>
+        <div>
+          <label>Login Meu INSS (CPF/usuário)</label>
+          <input type="text" id="loginMeuinss-${key}" placeholder="CPF ou usuário de acesso" value="${escapeHtml(st.loginMeuinss||'')}">
+        </div>
+        <div>
+          <label>Senha Meu INSS</label>
+          <div style="display:flex;gap:6px;">
+            <input type="password" id="senhaMeuinss-${key}" placeholder="Senha de acesso ao Meu INSS / gov.br" value="${escapeHtml(st.senhaMeuinss||'')}" style="flex:1;">
+            <button type="button" onclick="(function(){const i=document.getElementById('senhaMeuinss-${key}');i.type=i.type==='password'?'text':'password';})()" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0 10px;cursor:pointer;font-size:12px;">👁</button>
+          </div>
+        </div>
+        <div class="full">
+          <label>Estratégia para novo protocolo / recurso</label>
+          <textarea id="estrategia-${key}" placeholder="Ex: reunir novos laudos, juntar exames complementares, protocolar com CID atualizado, ingressar com recurso na junta de recursos...">${escapeHtml(st.estrategia||'')}</textarea>
+        </div>
+        <div class="full">
+          <label>Observações</label>
+          <textarea id="obs-${key}" placeholder="Outras anotações relevantes do caso">${escapeHtml(st.observacoes||'')}</textarea>
+        </div>
+      </div>
+
+      <div class="save-row">
+        <span class="save-msg" id="msg-${key}">Salvo ✓</span>
+        <button class="save" id="save-${key}">Salvar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.deleteCliente = async function deleteCliente(cpf, nome){
+  if(!confirm(`Excluir o cliente "${nome}" (${cpf})?\n\nIsso removerá todos os dados salvos desse cliente. Os requerimentos que vieram da planilha original não serão excluídos da base de dados — apenas os dados preenchidos manualmente (estratégia, status, etc.) serão apagados. O cliente voltará a aparecer com status "Não informado".\n\nContinuar?`)) return;
+  const key = slug(cpf);
+  try{
+    await deleteDoc(doc(db, COLLECTION, key));
+    await deleteDoc(doc(db, COLLECTION, key));
+    delete clientsState[cpf];
+    // Se for cliente manual, remove também da lista
+    const isSeed = SEED_CLIENTS.some(c => c.cpf === cpf);
+    if(!isSeed){
+      allClients = allClients.filter(c => c.cpf !== cpf);
+      order = order.filter(k => k !== cpf);
+      // Atualiza doc de clientes manuais no Firebase
+      const snap = await getDocs(collection(db, COLLECTION));
+      let manualClients = [];
+      snap.forEach(d => { if(d.id === MANUAL_DOC_ID) manualClients = d.data().clientes || []; });
+      manualClients = manualClients.filter(c => c.cpf !== cpf);
+      await setDoc(doc(db, COLLECTION, MANUAL_DOC_ID), { clientes: manualClients });
+    } else {
+      clientsState[cpf] = {status:'naoinformado', dataCessacao:'', dataProrrogacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[], reqOverrides:{}};
+    }
+    render();
+  }catch(e){
+    console.error(e);
+    alert('Erro ao excluir no Firebase.');
+  }
+}
+
+window.deleteRequerimento = async function deleteRequerimento(cpf, reqKey){
+  if(!confirm(`Excluir o requerimento "${reqKey}"?\n\nEssa ação não pode ser desfeita.`)) return;
+  const key = slug(cpf);
+  const st = clientsState[cpf] || {};
+  st.requerimentosExtras = (st.requerimentosExtras || []).filter(r => r.id !== reqKey);
+  if(st.resultados) delete st.resultados[reqKey];
+  if(st.locaisPericia) delete st.locaisPericia[reqKey];
+  if(st.motivosNegativa) delete st.motivosNegativa[reqKey];
+  if(st.reqOverrides) delete st.reqOverrides[reqKey];
+  clientsState[cpf] = st;
+  saveClient(cpf, true);
+}
+
+function addRequerimento(cpf){
+  const key = slug(cpf);
+  const protocolo = document.getElementById('newreq-protocolo-'+key).value.trim();
+  const dataIso = document.getElementById('newreq-data-'+key).value;
+  const unidade = document.getElementById('newreq-unidade-'+key).value.trim();
+  if(!protocolo){
+    alert('Informe ao menos o número do protocolo.');
+    return;
+  }
+  const st = clientsState[cpf] || {status:'naoinformado', dataCessacao:'', dataProrrogacao:'', estrategia:'', observacoes:'', resultados:{}, locaisPericia:{}, motivosNegativa:{}, requerimentosExtras:[], reqOverrides:{}};
+  st.requerimentosExtras = st.requerimentosExtras || [];
+  st.requerimentosExtras.push({
+    id: 'ex_' + Date.now() + '_' + Math.floor(Math.random()*10000),
+    protocolo,
+    data: isoToBr(dataIso) || '(não informado)',
+    unidade: unidade || '(não informado)',
+    ultimaAtualizacao: ''
+  });
+  clientsState[cpf] = st;
+  saveClient(cpf, true);
+}
+
+async function saveClient(cpf, silent){
+  const key = slug(cpf);
+  const c = allClients.find(cl => cl.cpf === cpf);
+  const prev = clientsState[cpf] || {};
+  const resultados = {};
+  const locaisPericia = {};
+  const motivosNegativa = {};
+  const reqOverrides = {};
+  let novasExtras = (prev.requerimentosExtras || []).map(r => ({...r}));
+  if(c){
+    const reqList = buildReqList(c, prev);
+    reqList.forEach(r => {
+      const elProtocolo = document.getElementById('reqprotocolo-'+key+'-'+r.reqKey);
+      const elData = document.getElementById('reqdata-'+key+'-'+r.reqKey);
+      const elUnidade = document.getElementById('requnidade-'+key+'-'+r.reqKey);
+      const novoProtocolo = elProtocolo ? elProtocolo.value.trim() : r.protocolo;
+      const novaData = elData ? (isoToBr(elData.value) || r.data) : r.data;
+      const novaUnidade = elUnidade ? elUnidade.value.trim() : r.unidade;
+
+      if(r.source === 'seed'){
+        reqOverrides[r.reqKey] = { protocolo: novoProtocolo, data: novaData, unidade: novaUnidade };
+      } else {
+        const idx = novasExtras.findIndex(e => e.id === r.reqKey);
+        if(idx > -1){
+          novasExtras[idx].protocolo = novoProtocolo;
+          novasExtras[idx].data = novaData;
+          novasExtras[idx].unidade = novaUnidade;
+        }
+      }
+
+      const elRes = document.getElementById('res-'+key+'-'+r.reqKey);
+      if(elRes) resultados[r.reqKey] = elRes.value;
+      const elPericia = document.getElementById('pericia-'+key+'-'+r.reqKey);
+      if(elPericia) locaisPericia[r.reqKey] = elPericia.value;
+      const elMotivo = document.getElementById('motivo-'+key+'-'+r.reqKey);
+      if(elMotivo) motivosNegativa[r.reqKey] = elMotivo.value;
+    });
+  }
+  const data = {
+    nome: c?.nome || prev.nome || '',
+    cpf: cpf,
+    status: document.getElementById('status-'+key)?.value || prev.status || 'naoinformado',
+    dataCessacao: isoToBr(document.getElementById('cessacao-'+key)?.value || ''),
+    dataProrrogacao: isoToBr(document.getElementById('prorrogacao-'+key)?.value || ''),
+    loginMeuinss: document.getElementById('loginMeuinss-'+key)?.value || '',
+    senhaMeuinss: document.getElementById('senhaMeuinss-'+key)?.value || '',
+    estrategia: document.getElementById('estrategia-'+key)?.value || '',
+    observacoes: document.getElementById('obs-'+key)?.value || '',
+    resultados: resultados,
+    locaisPericia: locaisPericia,
+    motivosNegativa: motivosNegativa,
+    reqOverrides: reqOverrides,
+    requerimentosExtras: novasExtras,
+    atualizadoEm: new Date().toISOString()
+  };
+  clientsState[cpf] = data;
+  try{
+    await setDoc(doc(db, COLLECTION, key), data);
+    if(!silent){
+      const msg = document.getElementById('msg-'+key);
+      if(msg){
+        msg.classList.add('show');
+        setTimeout(()=>msg.classList.remove('show'), 1500);
+      }
+      renderStats();
+      const badge = document.querySelector('#head-'+key+' .badge');
+      if(badge){
+        badge.className = 'badge badge-' + data.status;
+        badge.textContent = STATUS_LABELS[data.status];
+      }
+    } else {
+      render();
+      const cardEl = document.getElementById('card-'+key);
+      if(cardEl) cardEl.classList.add('open');
+    }
+  }catch(e){
+    console.error(e);
+    alert('Erro ao salvar no Firebase. Verifique sua conexão ou as regras do Firestore.');
+  }
+}
+</script>
+</body>
+</html>
