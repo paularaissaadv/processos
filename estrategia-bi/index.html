@@ -423,7 +423,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBKHbSsHY3jlP10xZJ3qIQsP7KFMkOlFCo",
@@ -694,7 +694,7 @@ function cardHtml(c){
         <span class="reqcount">${reqs.length} requerimento${reqs.length>1?'s':''}</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn-danger btn-del-cliente" data-cpf="${c.cpf}" type="button" onclick="event.stopPropagation()">🗑 Excluir cliente</button>
+        <button class="btn-danger btn-del-cliente" type="button" onclick="event.stopPropagation(); window.deleteCliente('${c.cpf}', '${c.nome.replace(/'/g, "\\'")}')">🗑 Excluir cliente</button>
         <span class="chev">▶</span>
       </div>
     </div>
@@ -705,7 +705,7 @@ function cardHtml(c){
           <div class="req-item" data-reqkey="${r.reqKey}" data-source="${r.source}">
             <div class="req-item-head">
               <span>#${i+1}</span>
-              ${r.source === 'extra' ? `<button class="btn-danger btn-del-req" data-cpf="${c.cpf}" data-reqkey="${r.reqKey}" type="button" onclick="event.stopPropagation()">✕ Excluir</button>` : ''}
+              ${r.source === 'extra' ? `<button class="btn-danger btn-del-req" type="button" onclick="event.stopPropagation(); window.deleteRequerimento('${c.cpf}', '${r.reqKey}')">✕ Excluir</button>` : ''}
             </div>
             <div class="req-item-fields">
               <div>
@@ -805,11 +805,11 @@ function cardHtml(c){
   </div>`;
 }
 
-async function deleteCliente(cpf, nome){
+window.deleteCliente = async function deleteCliente(cpf, nome){
   if(!confirm(`Excluir o cliente "${nome}" (${cpf})?\n\nIsso removerá todos os dados salvos desse cliente. Os requerimentos que vieram da planilha original não serão excluídos da base de dados — apenas os dados preenchidos manualmente (estratégia, status, etc.) serão apagados. O cliente voltará a aparecer com status "Não informado".\n\nContinuar?`)) return;
   const key = slug(cpf);
   try{
-    const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    await deleteDoc(doc(db, COLLECTION, key));
     await deleteDoc(doc(db, COLLECTION, key));
     delete clientsState[cpf];
     // Se for cliente manual, remove também da lista
@@ -833,12 +833,11 @@ async function deleteCliente(cpf, nome){
   }
 }
 
-async function deleteRequerimento(cpf, reqKey){
+window.deleteRequerimento = async function deleteRequerimento(cpf, reqKey){
   if(!confirm(`Excluir o requerimento "${reqKey}"?\n\nEssa ação não pode ser desfeita.`)) return;
   const key = slug(cpf);
   const st = clientsState[cpf] || {};
   st.requerimentosExtras = (st.requerimentosExtras || []).filter(r => r.id !== reqKey);
-  // Limpa dados desse req
   if(st.resultados) delete st.resultados[reqKey];
   if(st.locaisPericia) delete st.locaisPericia[reqKey];
   if(st.motivosNegativa) delete st.motivosNegativa[reqKey];
