@@ -55,16 +55,18 @@
     return Math.floor((hoje - d) / 86400000);
   }
   function faixaParado(dias) {
-    if (dias > 60) return 'p60';
-    if (dias > 30) return 'p30';
-    if (dias > 15) return 'p15';
+    if (dias > 120) return 'p120';
+    if (dias > 80)  return 'p80';
+    if (dias > 60)  return 'p60';
+    if (dias > 30)  return 'p30';
     return 'p0';
   }
   const PARADO = {
-    p60: { label: '+60 dias',     cor: '#ef4444' },
-    p30: { label: '31–60 dias',   cor: '#f97316' },
-    p15: { label: '16–30 dias',   cor: '#eab308' },
-    p0:  { label: 'até 15 dias',  cor: '#22c55e' },
+    p120: { label: '+120 dias',   cor: '#7f1d1d' },
+    p80:  { label: '80–120 dias', cor: '#ef4444' },
+    p60:  { label: '60–80 dias',  cor: '#f97316' },
+    p30:  { label: '30–60 dias',  cor: '#eab308' },
+    p0:   { label: 'até 30 dias', cor: '#22c55e' },
   };
   function urgencia(p) {
     if (!p.diligencia || !p.diligencia.trim()) return 'ok';
@@ -782,10 +784,11 @@ tbody td{padding:10px 12px;vertical-align:top}
   </select>
   <select id="filtroParado" onchange="renderAtivo()">
     <option value="">Tempo parado: todos</option>
-    <option value="p60">+60 dias</option>
-    <option value="p30">31–60 dias</option>
-    <option value="p15">16–30 dias</option>
-    <option value="p0">até 15 dias</option>
+    <option value="p120">+120 dias</option>
+    <option value="p80">80–120 dias</option>
+    <option value="p60">60–80 dias</option>
+    <option value="p30">30–60 dias</option>
+    <option value="p0">até 30 dias</option>
   </select>
   <span id="count"></span>
 </div>
