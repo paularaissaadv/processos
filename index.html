@@ -56,14 +56,14 @@
   }
   function faixaParado(dias) {
     if (dias > 120) return 'p120';
-    if (dias > 80)  return 'p80';
+    if (dias > 90)  return 'p90';
     if (dias > 60)  return 'p60';
     if (dias > 30)  return 'p30';
     return 'p0';
   }
   const PARADO = {
     p120: { label: '+120 dias',   cor: '#7f1d1d' },
-    p80:  { label: '80–120 dias', cor: '#ef4444' },
+    p90:  { label: '90–120 dias', cor: '#ef4444' },
     p60:  { label: '60–80 dias',  cor: '#f97316' },
     p30:  { label: '30–60 dias',  cor: '#eab308' },
     p0:   { label: 'até 30 dias', cor: '#22c55e' },
@@ -785,7 +785,7 @@ tbody td{padding:10px 12px;vertical-align:top}
   <select id="filtroParado" onchange="renderAtivo()">
     <option value="">Tempo parado: todos</option>
     <option value="p120">+120 dias</option>
-    <option value="p80">80–120 dias</option>
+    <option value="p90">90–120 dias</option>
     <option value="p60">60–80 dias</option>
     <option value="p30">30–60 dias</option>
     <option value="p0">até 30 dias</option>
