@@ -102,17 +102,32 @@
   }
 
   // ── FIREBASE: importar dados iniciais ──
-  async function importarDadosIniciais() {
-    // Verifica se a importação inicial já foi concluída
-    // Isso evita que processos excluídos intencionalmente sejam reimportados
-    const flagSnap = await getDocs(collection(db, 'config'));
-    const importacaoConcluida = flagSnap.docs.some(d => d.data().importacaoInicial === true);
-    if (importacaoConcluida) return;
+  const VERSAO_DADOS = "v3"; // incrementar aqui força reimportação completa
 
+  async function importarDadosIniciais() {
+    // Verifica se a importação desta versão já foi concluída
+    const flagSnap = await getDocs(collection(db, 'config'));
+    const jaImportou = flagSnap.docs.some(d =>
+      d.data().importacaoInicial === true && d.data().versao === VERSAO_DADOS
+    );
+    if (jaImportou) return;
+
+    // Busca o que já existe no Firebase
     const snap = await getDocs(collection(db, 'processos'));
     const numerosExistentes = new Set(snap.docs.map(d => d.data().numero));
-    const faltando = DADOS_INICIAIS.filter(p => !numerosExistentes.has(p.numero));
 
+    // Remove processos que não estão mais na lista atual (foram arquivados)
+    const numerosAtuais = new Set(DADOS_INICIAIS.map(p => p.numero));
+    const parasExcluir = snap.docs.filter(d => !numerosAtuais.has(d.data().numero));
+    for (const d of parasExcluir) {
+      await deleteDoc(doc(db, 'processos', d.id));
+    }
+    if (parasExcluir.length > 0) {
+      mostrarToast(`${parasExcluir.length} processos arquivados removidos.`, 'info');
+    }
+
+    // Importa os que ainda não existem
+    const faltando = DADOS_INICIAIS.filter(p => !numerosExistentes.has(p.numero));
     if (faltando.length > 0) {
       mostrarToast(`Importando ${faltando.length} processos...`, 'info');
       const LOTE = 15;
@@ -136,9 +151,10 @@
       mostrarToast(total + ' processos importados!', 'ok');
     }
 
-    // Marca a importação como concluída — a partir de agora exclusões são permanentes
+    // Grava flag com versão — futuras exclusões manuais não voltam mais
     await addDoc(collection(db, 'config'), {
       importacaoInicial: true,
+      versao: VERSAO_DADOS,
       concluidaEm: serverTimestamp()
     });
   }
