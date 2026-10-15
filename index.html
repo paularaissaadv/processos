@@ -546,11 +546,44 @@
   window.submitForm = submitForm;
   window.submitStatus = submitStatus;
   window.renderAtivo = renderAtivo;
-
+  // ── LIMPAR DUPLICADOS ──
+  async function limparDuplicados() {
+    const snap = await getDocs(collection(db, 'processos'));
+    const todos = snap.docs.map(d => ({ fbId: d.id, ...d.data() }));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(todos, null, 2)], { type: 'application/json' }));
+    a.download = 'backup-processos-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    const ms = t => (t && t.toMillis) ? t.toMillis() : 0;
+    const editado = p => ms(p.atualizadoEm) - ms(p.criadoEm) > 60000 || (p.comentarios || []).length > 0;
+    const grupos = {};
+    todos.forEach(p => (grupos[p.numero] = grupos[p.numero] || []).push(p));
+    const apagar = [], revisar = [];
+    Object.values(grupos).filter(g => g.length > 1).forEach(g => {
+      if (g.filter(editado).length > 1) { revisar.push(g[0].numero); return; }
+      g.sort((x, y) => (editado(y) - editado(x)) || (!!y.tribunal - !!x.tribunal) || (ms(x.criadoEm) - ms(y.criadoEm)));
+      apagar.push(...g.slice(1));
+    });
+    if (!apagar.length) { mostrarToast('Nenhuma cópia encontrada.', 'info'); return; }
+    const msg = `Backup baixado.\n\nSerão excluídas ${apagar.length} cópias (fica a versão que você editou).`
+      + (revisar.length ? `\n\nRevisar manualmente: ${revisar.join(', ')}` : '') + '\n\nConfirmar?';
+    if (!confirm(msg)) return;
+    for (const p of apagar) await deleteDoc(doc(db, 'processos', p.fbId));
+    mostrarToast(apagar.length + ' cópias removidas.', 'ok');
+  }
+  setTimeout(() => {
+    const novo = [...document.querySelectorAll('button')].find(b => b.textContent.includes('Novo Processo'));
+    if (!novo) return;
+    const b = document.createElement('button');
+    b.className = novo.className;
+    b.style.marginLeft = '8px';
+    b.textContent = '🧹 Limpar duplicados';
+    b.onclick = limparDuplicados;
+    novo.after(b);
+  }, 1500);
   // ── INIT ──
   document.addEventListener('DOMContentLoaded', async () => {
     mostrarToast('Conectando ao banco de dados...', 'info');
-    await importarDadosIniciais();
     escutar();
     setTimeout(popularFiltros, 1000);
   });
